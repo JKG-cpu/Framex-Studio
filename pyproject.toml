@@ -1,0 +1,10 @@
+[project]
+name = "framex-studio"
+version = "0.1.0"
+description = "This is a GUI Game Engine for my already built Framex game engine"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "framex-ce>=0.2.0",
+    "pyside6>=6.11.1",
+]
