@@ -1,17 +1,27 @@
 # ===========
 # Entry Point
 # ===========
-from PySide6.QtWidgets import QApplication
 import qdarktheme
+from PySide6.QtWidgets import QApplication
+from os import system, name
 
-from editor import *
+from src.editor import *
+
+def cc():
+    system("cls" if name == "nt" else "clear")
 
 if __name__ == "__main__":
     app = QApplication()
 
     qdarktheme.setup_theme("dark")
 
+    with open("styling.qss") as f:
+        app.setStyleSheet(app.styleSheet() + f.read())
+
     window = MainWindow()
+
     window.show()
 
-    exit(app.exec())
+    exit_code = app.exec()
+    cc()
+    exit(exit_code)

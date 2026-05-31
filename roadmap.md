@@ -123,35 +123,36 @@
 ```
 framex_studio/
 ├── main.py                          # Entry point
-├── editor/
-│   ├── __init__.py
-│   ├── main_window.py              # Main PySide6 window (layout)
-│   ├── panels/
+├── src/
+│   ├── editor/
 │   │   ├── __init__.py
-│   │   ├── scene_view.py           # QWidget: QPainter rendering + input
-│   │   ├── file_system_panel.py    # QTreeWidget: folder tree
-│   │   └── properties_panel.py     # QWidget: object properties form
-│   ├── exporter.py                 # Generate .py files for runtime
-│   └── scene_editor.py             # Manages current open scene
-├── runtime/                         # (Separate from editor, used in exported .py)
-│   ├── __init__.py
-│   ├── game.py                     # pygame-ce Game class
-│   ├── scene.py                    # RuntimeScene base class
-│   ├── game_object.py              # GameObject class
-│   ├── components/
+│   │   ├── main_window.py              # Main PySide6 window (layout)
+│   │   ├── panels/
+│   │   │   ├── __init__.py
+│   │   │   ├── scene_view.py           # QWidget: QPainter rendering + input
+│   │   │   ├── file_system_panel.py    # QTreeWidget: folder tree
+│   │   │   └── properties_panel.py     # QWidget: object properties form
+│   │   ├── exporter.py                 # Generate .py files for runtime
+│   │   └── scene_editor.py             # Manages current open scene
+│   ├── runtime/                         # (Separate from editor, used in exported .py)
 │   │   ├── __init__.py
-│   │   ├── transform.py            # Transform component
-│   │   ├── sprite.py               # Sprite component
-│   │   └── script.py               # Script component
-│   └── behavior.py                 # Behavior base class (user scripts inherit)
-├── serialization/
-│   ├── __init__.py
-│   ├── scene_serializer.py         # Save/load .scene JSON
-│   └── prefab_serializer.py        # Save/load .prefab JSON
-├── _framex_build/                  # (Generated, ignore)
-│   └── run_*.py
-└── resources/
-    └── icons/                      # UI icons (optional)
+│   │   ├── game.py                     # pygame-ce Game class
+│   │   ├── scene.py                    # RuntimeScene base class
+│   │   ├── game_object.py              # GameObject class
+│   │   ├── components/
+│   │   │   ├── __init__.py
+│   │   │   ├── transform.py            # Transform component
+│   │   │   ├── sprite.py               # Sprite component
+│   │   │   └── script.py               # Script component
+│   │   └── behavior.py                 # Behavior base class (user scripts inherit)
+│   ├── serialization/
+│   │   ├── __init__.py
+│   │   ├── scene_serializer.py         # Save/load .scene JSON
+│   │   └── prefab_serializer.py        # Save/load .prefab JSON
+│   ├── _framex_build/                  # (Generated, ignore)
+│   │   └── run_*.py
+│   └── resources/
+│       └── icons/                      # UI icons (optional)
 ```
 
 ### 1. Scene View (scene_view.py)
