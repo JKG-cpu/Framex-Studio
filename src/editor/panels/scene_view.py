@@ -13,110 +13,149 @@ from ...runtime import BaseObject
 from ..scene_editor import SceneEditor
 from .base_panel import Panel
 
-# Draw objects as rectangles
-# Click to select
-# Drag to move
-# Swap rectangles for sprites
+# Create a Grid (View) => DONE
+# Include Numbers (positions) on the grid => DONE
+# Add Panning => DONE
+# Create Basic objects in runtime/game_object.py and components/
+# Add Basic Objects
+# Select / Move Basic Objects
 
 __all__ = ["SceneView"]
 
 class SceneView(Panel):
-    def __init__(self, scene_editor: SceneEditor, parent = None) -> None:
+    def __init__(self, parent = None) -> None:
         super().__init__(parent)
         self.setObjectName("SceneView")
-        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-
-        self.scene_editor = scene_editor
-
-        # Pan + Zoom
-        self.zoom = 5
-        self.pan: QPointF = QPointF(0, 0)
+    
+        # Pan / Zoom
+        self.zoom: float = 1.0
+        self.snap: float = 50.0
+        self.pan: QPointF = QPointF(50.0, 50.0)
 
     # Helpers
     #region
-    def world_to_screen(self, world_pos: QPointF) -> QPointF:
+    def world_to_screen(self, world_pos: QPointF) -> QPointF: 
         return (world_pos + self.pan) * self.zoom
-    
-    def screen_to_world(self, screen_pos: QPointF) -> QPointF:
-        return (screen_pos / self.zoom) - self.pan
+        
+    def screen_to_world(self, screen_pos: QPointF, snap: bool = False) -> QPointF: 
+        world_pos = (screen_pos / self.zoom) - self.pan
+        
+        if snap and self.snap > 0:
+            snapped_x = round(world_pos.x() / self.snap) * self.snap
+            snapped_y = round(world_pos.y() / self.snap) * self.snap
+            return QPointF(snapped_x, snapped_y)
+            
+        return world_pos
     #endregion
 
     # Mouse Events
     #region
     def wheelEvent(self, event) -> None:
         delta = event.angleDelta()
-
-        if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
-            zoom_step = 0.5
-            self.zoom += zoom_step if delta.y() > 0 else -zoom_step
-            self.zoom = max(1, min(self.zoom, 10.0))
-        else:
-            self.pan += QPointF(-delta.x(), -delta.y()) * 0.5
-
+        
+        # Multiplier so you don't have to scroll forever
+        pan_speed_multiplier = 2.0 
+        
+        self.pan += QPointF(
+            delta.x() * pan_speed_multiplier, 
+            delta.y() * pan_speed_multiplier
+        )
         self.update()
     #endregion
 
     # Drawing
     #region
     def draw_grid(self, painter: QPainter) -> None:
-        base_grid = 50
-        scaled_grid = base_grid * self.zoom
-
-        while scaled_grid < 20:
-            scaled_grid *= 2
-
-        while scaled_grid > 100:
-            scaled_grid /= 2
-
-        start_x = -(self.pan.x() % scaled_grid)
-        start_y = -(self.pan.y() % scaled_grid)
-
-        pen = QPen(QColor("#FFFFFF"), 1)
+        pen = QPen(QColor("#095496"), 1)
         painter.setPen(pen)
 
-        x = start_x
-        while x < self.width():
-            painter.drawLine(int(x), 0, int(x), self.height())
-            x += scaled_grid
+        top_left_world = self.screen_to_world(QPointF(0, 0))
+        bottom_right_world = self.screen_to_world(QPointF(self.width(), self.height()))
 
-        y = start_y
-        while y < self.height():
-            painter.drawLine(0, int(y), self.width(), int(y))
-            y += scaled_grid
+        # Snap the start world positions to the nearest lower step of 50
+        start_world_x = (top_left_world.x() // self.snap) * self.snap
+        end_world_x = (bottom_right_world.x() // self.snap) * self.snap + self.snap
 
-    def draw_object(self, painter: QPainter, obj: BaseObject) -> None:
-        screen_pos = self.world_to_screen(obj.get_position())
+        start_world_y = (top_left_world.y() // self.snap) * self.snap
+        end_world_y = (bottom_right_world.y() // self.snap) * self.snap + self.snap
+
+        world_x = start_world_x
+        while world_x <= end_world_x:
+            screen_x = (world_x + self.pan.x()) * self.zoom
+            painter.drawLine(int(screen_x), 0, int(screen_x), self.height())
+            world_x += self.snap
         
-        obj_size = obj.get_size()
-        obj_scale = obj.scale()
+        world_y = start_world_y
+        while world_y <= end_world_y:
+            screen_y = (world_y + self.pan.y()) * self.zoom
+            painter.drawLine(0, int(screen_y), self.width(), int(screen_y))
+            world_y += self.snap
 
-        screen_w = obj_size.x() * obj_scale.x() * self.zoom
-        screen_h = obj_size.y() * obj_scale.y() * self.zoom
+    def draw_coords(self, painter: QPainter) -> None:
+        scaled_grid = self.snap * self.zoom
+        if scaled_grid < 40:
+            return
 
-        painter.drawRect(
-            int(screen_pos.x()),
-            int(screen_pos.y()),
-            int(screen_w),
-            int(screen_h)
-        )
+        font = QFont("Arial", 8)
+        painter.setFont(font)
+        painter.setPen(QPen(QColor("#4a90b8")))
 
-    def paintEvent(self, event):
+        top_left_world = self.screen_to_world(QPointF(0, 0))
+        bottom_right_world = self.screen_to_world(QPointF(self.width(), self.height()))
+
+        start_world_x = (top_left_world.x() // self.snap) * self.snap
+        end_world_x = (bottom_right_world.x() // self.snap) * self.snap + self.snap
+
+        start_world_y = (top_left_world.y() // self.snap) * self.snap
+        end_world_y = (bottom_right_world.y() // self.snap) * self.snap + self.snap
+
+        # Draw X-axis coordinate text numbers
+        world_x = start_world_x
+        while world_x <= end_world_x:
+            if int(world_x) != 0:
+                screen_x = (world_x + self.pan.x()) * self.zoom
+                if screen_x > 20:
+                    painter.drawText(int(screen_x) + 3, 14, str(int(world_x)))
+            world_x += self.snap
+        
+        # Draw Y-axis coordinate text numbers
+        world_y = start_world_y
+        while world_y <= end_world_y:
+            if int(world_y) != 0:
+                screen_y = (world_y + self.pan.y()) * self.zoom
+                if screen_y > 20:
+                    painter.drawText(4, int(screen_y) - 3, str(int(world_y)))
+            world_y += self.snap
+        
+    def draw_origin(self, painter: QPainter) -> None:
+        origin_screen = self.world_to_screen(QPointF(0, 0))
+        x, y = int(origin_screen.x()), int(origin_screen.y())
+
+        size = 8
+        painter.setPen(QPen(QColor("#ff4444"), 2))
+        painter.drawLine(x - size, y, x + size, y)
+        painter.drawLine(x, y - size, x, y + size)
+
+        # "0,0" label
+        painter.setFont(QFont("Arial", 8))
+        painter.setPen(QPen(QColor("#ff4444")))
+        painter.drawText(x + 6, y - 4, "0, 0")
+
+    def paintEvent(self, event) -> None:
         with QPainter(self) as painter:
             painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-
-            pen = QPen(QColor("#FFFFFF"), 3, Qt.PenStyle.SolidLine)
-            painter.setPen(pen)
-
-            brush = QBrush(QColor("#FFFFFF"), Qt.BrushStyle.SolidPattern)
-            painter.setBrush(brush)
 
             margin = 5
             clip_rect = self.rect().adjusted(margin, margin, -margin, -margin)
             painter.setClipRect(clip_rect)
 
-            for obj in self.scene_editor.get_objects():
-                self.draw_object(painter, obj)
-
-            self.draw_grid(painter)
-
+            self.draw_grid(
+                painter = painter
+            )
+            self.draw_coords(
+                painter = painter
+            )
+            self.draw_origin(
+                painter = painter
+            )
     #endregion

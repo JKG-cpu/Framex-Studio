@@ -3,11 +3,10 @@
 # =============================
 from PySide6.QtWidgets import (
     QMainWindow,
-    QVBoxLayout,
-    QHBoxLayout,
-    QPushButton,
+    QSplitter,
     QWidget
 )
+from PySide6.QtCore import Qt
 import qdarktheme
 
 from .panels import *
@@ -54,22 +53,28 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Framex Studio Editor")
         self.resize(1600, 1000)
 
-        # Central Widget
-        central = QWidget()
-        self.setCentralWidget(central)
-        root_layout = QVBoxLayout(central)
-
         # Scene Editor
         self.scene_editor = SceneEditor()
 
-        # Scene View + Properties
-        top = QHBoxLayout()
-        self.scene_view = SceneView(scene_editor = self.scene_editor)
+        # Top Row
+        self.scene_view = SceneView()
         self.properties_panel = PropertiesPanel()
-        top.addWidget(self.scene_view)
-        top.addWidget(self.properties_panel)
 
+        top_splitter = QSplitter(orientation = Qt.Horizontal)
+        top_splitter.setHandleWidth(0)
+        
+        top_splitter.addWidget(self.scene_view)
+        top_splitter.addWidget(self.properties_panel)
+
+        # Bottom
         self.file_system_panel = FileSystemPanel()
 
-        root_layout.addLayout(top)
-        root_layout.addWidget(self.file_system_panel)
+        main_splitter = QSplitter(Qt.Vertical)
+        main_splitter.setHandleWidth(0)
+
+        main_splitter.addWidget(top_splitter)
+        main_splitter.addWidget(self.file_system_panel)
+        main_splitter.setStretchFactor(0, 3)
+        main_splitter.setStretchFactor(1, 1)
+
+        self.setCentralWidget(main_splitter)
