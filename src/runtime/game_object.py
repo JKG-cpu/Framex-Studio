@@ -2,6 +2,8 @@
 # GameObject Class
 # ================
 from PySide6.QtCore import QPointF
+from PySide6.QtGui import QColor
+from os.path import join, isfile
 
 from .components import *
 
@@ -10,15 +12,134 @@ __all__ = ["BaseObject"]
 class BaseObject:
     def __init__(self) -> None:
         self.transform = Transform()
-
-    # Set
+        self._name: str = "Object"
+        self._tags: set[str] = set()
+        self._active: bool = True
+        self._layer: int = 0
+        self._color: str = "#FFFFFF"
+    
+    # Properties
     #region
-    def set_position(self, x: float, y: float) -> None: self.transform.size = QPointF(x, y)
-    #endregion
+    @property
+    def name(self) -> str: return self._name
 
-    # Get
-    #region
-    def get_position(self) -> QPointF: return self.transform.position
-    def get_size(self) -> QPointF: return self.transform.size
+    @property
+    def tag(self) -> frozenset[str]: return frozenset(self._tags)
+    
+    @property
+    def active(self) -> bool: return self._active
+
+    @property
+    def layer(self) -> int: return self._layer
+    
+    @property
+    def color(self) -> str: return self._color
+
+    # Transform
+    @property
+    def position(self) -> QPointF: return self.transform.position
+
+    @property
+    def rotation(self) -> float: return self.transform.rotation
+
+    @property
     def scale(self) -> QPointF: return self.transform.scale
+
+    @property
+    def size(self) -> QPointF: return self.transform.size
     #endregion
+
+    # Setter
+    #region
+    @name.setter
+    def name(self, value: str) -> None:
+        if isinstance(value, str):
+            self._name = value
+        
+        else:
+            raise TypeError(f"Name must be a str, got {type(value)}")
+
+    @tag.setter
+    def tag(self, value: str | list[str] | set[str]) -> None:
+        if isinstance(value, str):
+            self._tags = {value.strip().lower()}
+        
+        elif isinstance(value, (list, set)):
+            self._tags = {v.strip().lower() for v in value}
+
+        else:
+            raise TypeError(f"Tag must be str, list, or set, got {type(value)}")
+
+    @layer.setter
+    def layer(self, value: int) -> None:
+        if isinstance(value, int):
+            self._layer = value
+        
+        else:
+            raise TypeError(f"Layer must be an int, got {type(value)}")
+    
+    @color.setter
+    def color(self, value: str) -> None:
+        if isinstance(value, str) and value.startswith("#") and len(value) == 6:
+            self._color = value
+
+        else:
+            raise TypeError(f"Value must be a hex color (str), got {type(value)}, value: {value}")
+    #endregion
+
+    def toggle_active(self) -> None: self._active = not self._active
+
+    def move_to(self, x: int | float, y: int | float) -> None: 
+        if isinstance(x, (int, float)) and isinstance(y, (int, float)):
+            self.transform.position = QPointF(x, y)
+
+        else:
+            raise TypeError(f"X and Y must be ints or floats, got x: {type(x)} and y: {type(y)}")
+
+    def rotate(self, rotation: int | float) -> None:
+        if isinstance(rotation, (int, float)):
+            self.transform.rotation = rotation
+
+        else:
+            raise TypeError(f"Rotation must be an int or float, got {type(rotation)}")
+
+    def scale_to(self, w: int | float, h: int | float) -> None:
+        if isinstance(w, (int, float)) and isinstance(h, (int, float)):
+            self.transform.scale = QPointF(w, h)
+        
+        else:
+            raise TypeError(f"W and H must be ints or floats, got w: {type(w)} and h: {type(h)}")
+    
+    def resize(self, w: int | float, h: int | float) -> None:
+        if isinstance(w, (int, float)) and isinstance(h, (int, float)):
+            self.transform.size = QPointF(w, h)
+        
+        else:
+            raise TypeError(f"W and H must be ints or floats, got w: {type(w)} and h: {type(h)}")
+
+class Sprite(BaseObject):
+    def __init__(self) -> None:
+        super().__init__()
+
+        self._image_path: str | None = None
+        self._script_path: str | None = None
+    
+    @property
+    def image(self) -> str: return self._image_path
+
+    @property 
+    def script(self) -> str: return self._script_path
+
+    @image.setter
+    def image(self, *path: str) -> None:
+        self._image_path = join(*path)
+
+        if not isfile(self._image_path):
+            raise FileNotFoundError(f"File path: {self._image_path} not found.")
+        
+    @script.setter
+    def script(self, *path: str) -> None:
+        self._script_path = join(*path)
+
+        if not isfile(self._script_path):
+            raise FileNotFoundError(f"File path: {self._script_path} not found.")
