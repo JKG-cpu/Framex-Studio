@@ -15,8 +15,11 @@ class BaseObject:
         self._name: str = "Object"
         self._tags: set[str] = set()
         self._active: bool = True
+        self._selected: bool = False
         self._layer: int = 0
         self._color: str = "#FFFFFF"
+        self._image_path: str | None = None
+        self._script_path: str | None = None
     
     # Properties
     #region
@@ -28,6 +31,9 @@ class BaseObject:
     
     @property
     def active(self) -> bool: return self._active
+
+    @property
+    def selected(self) -> bool: return self._selected
 
     @property
     def layer(self) -> int: return self._layer
@@ -47,6 +53,13 @@ class BaseObject:
 
     @property
     def size(self) -> QPointF: return self.transform.size
+
+    # Paths
+    @property
+    def image(self) -> str: return self._image_path
+
+    @property 
+    def script(self) -> str: return self._script_path
     #endregion
 
     # Setter
@@ -70,6 +83,14 @@ class BaseObject:
         else:
             raise TypeError(f"Tag must be str, list, or set, got {type(value)}")
 
+    @selected.setter
+    def selected(self, selected: bool) -> None:
+        if isinstance(selected, bool):
+            self._selected = selected
+        
+        else:
+            raise TypeError(f"Selected must be a bool, got {type(selected)}")
+
     @layer.setter
     def layer(self, value: int) -> None:
         if isinstance(value, int):
@@ -85,9 +106,24 @@ class BaseObject:
 
         else:
             raise TypeError(f"Value must be a hex color (str), got {type(value)}, value: {value}")
+    
+    @image.setter
+    def image(self, *path: str) -> None:
+        self._image_path = join(*path)
+
+        if not isfile(self._image_path):
+            raise FileNotFoundError(f"File path: {self._image_path} not found.")
+        
+    @script.setter
+    def script(self, *path: str) -> None:
+        self._script_path = join(*path)
+
+        if not isfile(self._script_path):
+            raise FileNotFoundError(f"File path: {self._script_path} not found.")
     #endregion
 
     def toggle_active(self) -> None: self._active = not self._active
+    def toggle_selected(self) -> None: self._selected = not self._selected
 
     def move_to(self, x: int | float, y: int | float) -> None: 
         if isinstance(x, (int, float)) and isinstance(y, (int, float)):
@@ -116,30 +152,3 @@ class BaseObject:
         
         else:
             raise TypeError(f"W and H must be ints or floats, got w: {type(w)} and h: {type(h)}")
-
-class Sprite(BaseObject):
-    def __init__(self) -> None:
-        super().__init__()
-
-        self._image_path: str | None = None
-        self._script_path: str | None = None
-    
-    @property
-    def image(self) -> str: return self._image_path
-
-    @property 
-    def script(self) -> str: return self._script_path
-
-    @image.setter
-    def image(self, *path: str) -> None:
-        self._image_path = join(*path)
-
-        if not isfile(self._image_path):
-            raise FileNotFoundError(f"File path: {self._image_path} not found.")
-        
-    @script.setter
-    def script(self, *path: str) -> None:
-        self._script_path = join(*path)
-
-        if not isfile(self._script_path):
-            raise FileNotFoundError(f"File path: {self._script_path} not found.")

@@ -5,7 +5,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout, QLabel, QWidget, QPushButton, QFrame, QHBoxLayout
 )
 from PySide6.QtGui import (
-    QPainter, QPen, QBrush, QColor, QFont
+    QPainter, QPen, QBrush, QColor, QFont, QKeyEvent, QMouseEvent
 )
 from PySide6.QtCore import Qt, QPointF
 
@@ -17,9 +17,9 @@ from .base_panel import Panel
 # Include Numbers (positions) on the grid => DONE
 # Add Panning => DONE
 # Add some buttons (return to (0, 0), navbar?) => DONE (framework)
-# Create Basic objects in runtime/game_object.py and components/
-# Add Basic Objects to Scene View
-# Select / Move Basic Objects
+# Create Basic objects in runtime/game_object.py and components/ => DONE
+# Add Basic Objects to Scene View => DONE
+# Select / Move Basic Objects +> DONE
 
 __all__ = ["SceneView"]
 
@@ -28,6 +28,7 @@ class SceneView(Panel):
         super().__init__(parent)
         self.item_colors: dict[str, str] = item_colors
 
+        self.setMouseTracking(True)
         self.setObjectName("SceneView")
         self.setStyleSheet(self.styleSheet() + f"background: {self.item_colors["background"]}; color: {self.item_colors["text"]}")
 
@@ -35,6 +36,10 @@ class SceneView(Panel):
         self.zoom: float = 1.0
         self.snap: float = 50.0
         self.pan: QPointF = QPointF(50.0, 50.0)
+
+        # Selection
+        self.selected_object: BaseObject | None = None
+        self.drag_offset: QPointF = QPointF(0, 0)
 
         self._setup_bars()
 
@@ -49,25 +54,14 @@ class SceneView(Panel):
 
     # Helpers
     #region
-    def world_to_screen(self, world_pos: QPointF) -> QPointF: 
-        return (world_pos + self.pan) * self.zoom
-        
-    def screen_to_world(self, screen_pos: QPointF, snap: bool = False) -> QPointF: 
-        world_pos = (screen_pos / self.zoom) - self.pan
-        
-        if snap and self.snap > 0:
-            snapped_x = round(world_pos.x() / self.snap) * self.snap
-            snapped_y = round(world_pos.y() / self.snap) * self.snap
-            return QPointF(snapped_x, snapped_y)
-            
-        return world_pos
+    def world_to_screen(self, world_pos: QPointF) -> QPointF:  return (world_pos + self.pan) * self.zoom
+    def screen_to_world(self, screen_pos: QPointF) -> QPointF: return (screen_pos / self.zoom) - self.pan
     
     def _setup_bars(self) -> None:
         self.top_bar = QFrame(self)
         self.top_bar.setFixedHeight(32)
         self.top_bar.setObjectName("SceneviewTopBar")
-        self.top_bar.setStyleSheet("#SceneviewTopBar { border: 1px solid white; } color: white; background: transparent;")
-
+        
         top_layout = QHBoxLayout(self.top_bar)
         top_layout.setContentsMargins(10, 4, 10, 4)
 
@@ -78,7 +72,6 @@ class SceneView(Panel):
         self.edit_bar = QFrame(self)
         self.edit_bar.setFixedHeight(32)
         self.edit_bar.setObjectName("SceneviewEditBar")
-        self.edit_bar.setStyleSheet("#SceneviewEditBar { border: 1px solid white; } color: white; background: transparent;")
         
         edit_layout = QHBoxLayout(self.edit_bar)
         edit_layout.setContentsMargins(10, 4, 10, 4)
@@ -95,8 +88,7 @@ class SceneView(Panel):
         self.bottom_bar = QFrame(self)
         self.bottom_bar.setFixedHeight(32)
         self.bottom_bar.setObjectName("SceneviewBottomBar")
-        self.bottom_bar.setStyleSheet("#SceneviewBottomBar { border: 1px solid white; } color: white; background: transparent;")
-
+        
         bottom_layout = QHBoxLayout(self.bottom_bar)
         bottom_layout.setContentsMargins(10, 4, 10, 4)
 
@@ -105,6 +97,23 @@ class SceneView(Panel):
 
         bottom_layout.addStretch()
         bottom_layout.addWidget(rto_button)
+    
+    def get_object_at(self, world_pos: QPointF) -> BaseObject | None:
+        for obj in self.objects:
+            x, y = obj.position.x(), obj.position.y()
+            w, h = obj.size.x() * obj.scale.x(), obj.size.y() * obj.scale.y()
+
+            if x <= world_pos.x() <= x + w and y <= world_pos.y() <= y + h:
+                return obj
+        
+        return None
+    
+    def deselected_objects(self, object: BaseObject) -> None:
+        for obj in self.objects:
+            if obj == object:
+                continue
+
+            obj.selected = False
     #endregion
 
     # Widget Events
@@ -140,9 +149,23 @@ class SceneView(Panel):
         pass
     #endregion
 
+    # KeyBoard Events
+    #region
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        super().keyPressEvent(event)
+
+        key = event.key()
+
+        # Object Deselection
+        if key == Qt.Key.Key_Escape and self.selected_object:
+            self.selected_object.selected = False
+            self.selected_object = None
+            self.update()
+    #endregion
+
     # Mouse Events
     #region
-    def wheelEvent(self, event) -> None:
+    def wheelEvent(self, event: QMouseEvent) -> None:
         delta = event.angleDelta()
         
         # Multiplier so you don't have to scroll forever
@@ -152,6 +175,36 @@ class SceneView(Panel):
             delta.x() * pan_speed_multiplier, 
             delta.y() * pan_speed_multiplier
         )
+
+        self.update()
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        super().mousePressEvent(event)
+
+        obj = self.get_object_at(
+            world_pos = self.screen_to_world(event.position())
+        )
+
+        if obj and event.buttons() == Qt.MouseButton.LeftButton:
+            obj.selected = True
+            self.selected_object = obj
+            self.deselected_objects(obj)
+
+            self.drag_offset = self.screen_to_world(event.position()) - obj.position
+        
+        self.update()
+
+    def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        super().mouseMoveEvent(event)
+
+        # Dragging Objects
+        if self.selected_object and event.buttons() == Qt.MouseButton.LeftButton:
+            world_coords = self.screen_to_world(event.position())
+            self.selected_object.move_to(
+                world_coords.x() - self.drag_offset.x(),
+                world_coords.y() - self.drag_offset.y()
+            )
+        
         self.update()
     #endregion
 
@@ -241,7 +294,12 @@ class SceneView(Panel):
         screen_w = obj.size.x() * obj.scale.x() * self.zoom
         screen_h = obj.size.y() * obj.scale.y() * self.zoom
 
-        painter.setPen(Qt.NoPen)
+        if obj.selected:
+            painter.setPen(QPen(QColor(self.item_colors["selection"]), 4))
+        
+        else:
+            painter.setPen(Qt.NoPen)
+        
         painter.setBrush(QBrush(QColor(obj.color)))
 
         painter.drawRect(
