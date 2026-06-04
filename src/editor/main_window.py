@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
     QWidget
 )
 from PySide6.QtCore import Qt
+from typing import Literal
 import qdarktheme
 
 from .panels import *
@@ -53,11 +54,37 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Framex Studio Editor")
         self.resize(1600, 1000)
 
+        # Color Schemes
+        self.mode: Literal["dark", "light"] = "dark"
+
+        self.scene_view_colors = {
+            "dark": {
+                "background": "#1E1E1E",
+                "coord_text": "#4A90B8",
+                "x_axis": "#D16969",
+                "y_axis": "#4A90B8",
+                "origin": "#FF5555",
+                "selection": "#6CB6FF",
+                "text": "#D4D4D4"
+            },
+            "light": {
+                "background": "#F7F7F7",
+                "coord_text": "#2E75A0",
+                "x_axis": "#CC5555",
+                "y_axis": "#2E75A0",
+                "origin": "#E53935",
+                "selection": "#1976D2",
+                "text": "#222222"
+            }
+        }
+
         # Scene Editor
         self.scene_editor = SceneEditor()
 
         # Top Row
-        self.scene_view = SceneView()
+        self.scene_view = SceneView(
+            item_colors = self.scene_view_colors.get(self.mode)
+        )
         self.properties_panel = PropertiesPanel()
 
         top_splitter = QSplitter(orientation = Qt.Horizontal)

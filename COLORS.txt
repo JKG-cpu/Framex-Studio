@@ -1,0 +1,55 @@
+# =======================================
+# FRAMEX STUDIO - DARK THEME (SCENE VIEW)
+# =======================================
+
+BACKGROUND = "#1E1E1E"
+
+# Grid
+GRID_MINOR = "#3A3A3A"
+GRID_MAJOR = "#4A4A4A"
+
+# Coordinate Labels
+COORD_TEXT = "#4A90B8"
+
+# Axes
+AXIS_X = "#D16969"      # Soft Red
+AXIS_Y = "#4A90B8"      # Existing Blue Accent
+
+# Origin
+ORIGIN = "#FF5555"
+
+# Selection / Hover
+SELECTION = "#6CB6FF"
+HOVER = "#8CC8FF"
+
+# Misc
+TEXT = "#D4D4D4"
+BORDER = "#2D2D2D"
+
+# ========================================
+# FRAMEX STUDIO - LIGHT THEME (SCENE VIEW)
+# ========================================
+
+BACKGROUND = "#F7F7F7"
+
+# Grid
+GRID_MINOR = "#D9D9D9"
+GRID_MAJOR = "#C2C2C2"
+
+# Coordinate Labels
+COORD_TEXT = "#2E75A0"
+
+# Axes
+AXIS_X = "#CC5555"
+AXIS_Y = "#2E75A0"
+
+# Origin
+ORIGIN = "#E53935"
+
+# Selection / Hover
+SELECTION = "#1976D2"
+HOVER = "#4A9FFF"
+
+# Misc
+TEXT = "#222222"
+BORDER = "#BDBDBD"
