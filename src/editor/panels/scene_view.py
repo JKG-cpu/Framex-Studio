@@ -38,6 +38,15 @@ class SceneView(Panel):
 
         self._setup_bars()
 
+        self.objects: list[BaseObject] = [
+            BaseObject()
+        ]
+        b = BaseObject()
+        b.move_to(500, 500)
+        b.resize(100, 100)
+        b.color = "#FF007F"
+        self.objects.append(b)
+
     # Helpers
     #region
     def world_to_screen(self, world_pos: QPointF) -> QPointF: 
@@ -226,6 +235,22 @@ class SceneView(Panel):
         painter.setPen(QPen(QColor(self.item_colors["origin"])))
         painter.drawText(x + 6, y - 4, "0, 0")
 
+    def draw_object(self, painter: QPainter, obj: BaseObject) -> None:
+        screen_pos = self.world_to_screen(obj.position)
+
+        screen_w = obj.size.x() * obj.scale.x() * self.zoom
+        screen_h = obj.size.y() * obj.scale.y() * self.zoom
+
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(QBrush(QColor(obj.color)))
+
+        painter.drawRect(
+            int(screen_pos.x()),
+            int(screen_pos.y()),
+            int(screen_w),
+            int(screen_h)
+        )
+
     def paintEvent(self, event) -> None:
         with QPainter(self) as painter:
             painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -237,6 +262,13 @@ class SceneView(Panel):
             # Background
             painter.fillRect(self.rect(), self.item_colors["background"])
 
+            for obj in self.objects:
+                self.draw_object(
+                    painter = painter,
+                    obj = obj
+                )
+
+            # Grid
             self.draw_grid(
                 painter = painter
             )
@@ -246,4 +278,5 @@ class SceneView(Panel):
             self.draw_origin(
                 painter = painter
             )
+
     #endregion

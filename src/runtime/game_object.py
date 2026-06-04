@@ -80,7 +80,7 @@ class BaseObject:
     
     @color.setter
     def color(self, value: str) -> None:
-        if isinstance(value, str) and value.startswith("#") and len(value) == 6:
+        if isinstance(value, str) and value.startswith("#") and len(value) == 7:
             self._color = value
 
         else:

@@ -5,4 +5,5 @@
 
 QPushButton {
     background: transparent;
+    border: none;
 }
