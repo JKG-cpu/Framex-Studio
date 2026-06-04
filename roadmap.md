@@ -301,9 +301,9 @@ class SceneExporter:
 
 ## Next Steps
 
-1. **Create main window layout** with 3 panels (Scene View, File System, Properties)
-2. **Implement Scene View** with QPainter + basic object rendering
-3. **Implement File System** with QTreeWidget auto-scan
+1. **Create main window layout - DONE** with 3 panels (Scene View, File System, Properties)
+2. **Implement Scene View - DONE** with QPainter + basic object rendering
+3. **Implement File System - IN PROGRESS** with QTreeWidget auto-scan
 4. **Implement Properties Panel** with form fields
 5. **Wire up signals/slots** to connect panels
 6. **Build serialization** (load/save .scene and .prefab JSON)

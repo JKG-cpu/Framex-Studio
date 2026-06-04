@@ -13,14 +13,6 @@ from ...runtime import BaseObject
 from ..scene_editor import SceneEditor
 from .base_panel import Panel
 
-# Create a Grid (View) => DONE
-# Include Numbers (positions) on the grid => DONE
-# Add Panning => DONE
-# Add some buttons (return to (0, 0), navbar?) => DONE (framework)
-# Create Basic objects in runtime/game_object.py and components/ => DONE
-# Add Basic Objects to Scene View => DONE
-# Select / Move Basic Objects +> DONE
-
 __all__ = ["SceneView"]
 
 class SceneView(Panel):
