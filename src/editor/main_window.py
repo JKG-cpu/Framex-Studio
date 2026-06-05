@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 from typing import Literal
+from os.path import join
 import qdarktheme
 
 from .panels import *
@@ -48,7 +49,7 @@ __all__ = ["MainWindow"]
 #endregion
 
 class MainWindow(QMainWindow):
-    def __init__(self) -> None:
+    def __init__(self, *file_path: str) -> None:
         super().__init__()
 
         self.setWindowTitle("Framex Studio Editor")
@@ -77,6 +78,50 @@ class MainWindow(QMainWindow):
                 "text": "#222222"
             }
         }
+        self.file_system_panel_colors = {
+            "dark": {
+                "background":           "#1E1E1E",
+                "background_alt":       "#252526",
+                "header_background":    "#2A2A2A",
+                "text":                 "#D4D4D4",
+                "text_muted":           "#8A8A8A",
+                "folder":               "#4A90B8",
+                "file":                 "#C8C8C8",
+                "file_size":            "#8A8A8A",
+                "selection":            "#2D5D8A",
+                "selection_text":       "#FFFFFF",
+                "hover":                "#2A3F52",
+                "border":               "#3A3A3A",
+                "scrollbar_bg":         "#252526",
+                "scrollbar_handle":     "#4A4A4A",
+                "scrollbar_handle_hover": "#5A5A5A",
+                "scene_file":           "#D7BA7D",
+                "script_file":          "#569CD6",
+                "config_file":          "#B5CEA8",
+                "doc_file":             "#CE9178",
+            },
+            "light": {
+                "background":           "#F7F7F7",
+                "background_alt":       "#EEEEEE",
+                "header_background":    "#E5E5E5",
+                "text":                 "#222222",
+                "text_muted":           "#6E6E6E",
+                "folder":               "#2E75A0",
+                "file":                 "#444444",
+                "file_size":            "#7A7A7A",
+                "selection":            "#CFE8FF",
+                "selection_text":       "#111111",
+                "hover":                "#E6F2FA",
+                "border":               "#C8C8C8",
+                "scrollbar_bg":         "#E5E5E5",
+                "scrollbar_handle":     "#B8B8B8",
+                "scrollbar_handle_hover": "#A5A5A5",
+                "scene_file":           "#B8860B",
+                "script_file":          "#2E75A0",
+                "config_file":          "#4E8C4A",
+                "doc_file":             "#C96A2B",
+            }
+        }
 
         # Scene Editor
         self.scene_editor = SceneEditor()
@@ -94,7 +139,10 @@ class MainWindow(QMainWindow):
         top_splitter.addWidget(self.properties_panel)
 
         # Bottom
-        self.file_system_panel = FileSystemPanel()
+        self.file_system_panel = FileSystemPanel(
+            item_colors = self.file_system_panel_colors.get(self.mode),
+            file_path = join(*file_path)
+        )
 
         main_splitter = QSplitter(Qt.Vertical)
         main_splitter.setHandleWidth(0)
