@@ -54,6 +54,7 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle("Framex Studio Editor")
         self.resize(1600, 1000)
+        self.setContentsMargins(8, 8, 8, 8)
 
         # Color Schemes
         self.mode: Literal["dark", "light"] = "dark"
@@ -123,6 +124,10 @@ class MainWindow(QMainWindow):
             }
         }
 
+        # Options Bar
+        self.options_widget = QWidget()
+        self.options_widget.setMaximumHeight(20)
+
         # Scene Editor
         self.scene_editor = SceneEditor()
 
@@ -147,9 +152,12 @@ class MainWindow(QMainWindow):
         main_splitter = QSplitter(Qt.Vertical)
         main_splitter.setHandleWidth(0)
 
+        main_splitter.addWidget(self.options_widget)
         main_splitter.addWidget(top_splitter)
         main_splitter.addWidget(self.file_system_panel)
-        main_splitter.setStretchFactor(0, 3)
-        main_splitter.setStretchFactor(1, 1)
+        
+        main_splitter.setStretchFactor(0, 1)
+        main_splitter.setStretchFactor(1, 7)
+        main_splitter.setStretchFactor(2, 1)
 
         self.setCentralWidget(main_splitter)

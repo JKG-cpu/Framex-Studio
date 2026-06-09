@@ -254,7 +254,7 @@ class SceneView(Panel):
             if int(world_x) != 0:
                 screen_x = (world_x + self.pan.x()) * self.zoom
                 if screen_x > 20:
-                    painter.drawText(int(screen_x) + 3, 14, str(int(world_x)))
+                    painter.drawText(int(screen_x) + 3, 12, str(int(world_x)))
             world_x += self.snap
         
         # Draw Y-axis coordinate text numbers
@@ -263,7 +263,7 @@ class SceneView(Panel):
             if int(world_y) != 0:
                 screen_y = (world_y + self.pan.y()) * self.zoom
                 if screen_y > 20:
-                    painter.drawText(4, int(screen_y) - 3, str(int(world_y)))
+                    painter.drawText(10, int(screen_y) - 3, str(int(world_y)))
             world_y += self.snap
         
     def draw_origin(self, painter: QPainter) -> None:
@@ -306,7 +306,7 @@ class SceneView(Panel):
             painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
             margin = 7
-            clip_rect = self.rect().adjusted(margin, margin - 1, -margin, -margin)
+            clip_rect = self.rect().adjusted(margin - 1, margin - 1, -margin, -margin)
             painter.setClipRect(clip_rect)
 
             # Background
