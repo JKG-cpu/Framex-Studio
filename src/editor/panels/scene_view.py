@@ -2,7 +2,9 @@
 # QWidget: QPainter Rendering + Input
 # ===================================
 from PySide6.QtWidgets import (
-    QVBoxLayout, QLabel, QWidget, QPushButton, QFrame, QHBoxLayout
+    QVBoxLayout, QHBoxLayout,
+    QLabel, QWidget, QPushButton, QFrame,
+    QApplication, QStyle
 )
 from PySide6.QtGui import (
     QPainter, QPen, QBrush, QColor, QFont, QKeyEvent, QMouseEvent
@@ -23,6 +25,12 @@ class SceneView(Panel):
         self.setMouseTracking(True)
         self.setObjectName("SceneView")
         self.setStyleSheet(self.styleSheet() + f"background: {self.item_colors["background"]}; color: {self.item_colors["text"]}")
+
+        # Icons
+        style = QApplication.style()
+        self.start_icon = style.standardIcon(QStyle.SP_MediaPlay)
+        self.pause_icon = style.standardIcon(QStyle.SP_MediaPause)
+        self.stop_icon  = style.standardIcon(QStyle.SP_MediaStop)
 
         # Pan / Zoom
         self.zoom: float = 1.0
@@ -67,11 +75,14 @@ class SceneView(Panel):
         
         edit_layout = QHBoxLayout(self.edit_bar)
         edit_layout.setContentsMargins(10, 4, 10, 4)
+        edit_layout.setSpacing(4)
 
-        play_button = QPushButton("▶️")
+        play_button = QPushButton()
+        play_button.setIcon(self.start_icon)
         play_button.clicked.connect(self._play)
 
-        pause_button = QPushButton("⏸️")
+        pause_button = QPushButton()
+        pause_button.setIcon(self.pause_icon)
 
         edit_layout.addStretch()
         edit_layout.addWidget(play_button)

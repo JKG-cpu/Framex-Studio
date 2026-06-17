@@ -4,15 +4,27 @@
 from PySide6.QtWidgets import (
     QTreeWidget, QTreeWidgetItem, 
     QSplitter, QHBoxLayout, QVBoxLayout,
-    QWidget, QLabel, QFrame
+    QWidget, QLabel, QFrame,
+    QApplication, QStyle
 )
 from PySide6.QtGui import QColor
 from PySide6.QtCore import Qt, Signal
 from pathlib import Path
+from PIL import Image as PILImage
 
 from .base_panel import Panel
+from .file_props import *
 
 __all__ = ["FileSystemPanel"]
+
+class FilePreviewWidget(QWidget):
+    def __init__(self, parent = None) -> None:
+        super().__init__(parent)
+
+        self.setObjectName("FilePreviewWidget")
+        self.setStyleSheet("""
+            FilePreviewWidget { border: 2px solid grey; }
+        """)
 
 class FilePropertiesWidget(QWidget):
     def __init__(self, parent=None) -> None:
@@ -32,41 +44,57 @@ class FilePropertiesWidget(QWidget):
         """
         )
 
+        self.WIDGET_REGISTRY = {
+            File: self._build_file,
+            Folder: self._build_folder,
+            Image: self._build_image
+        }
+
         layout = QVBoxLayout(self)
-        
+
         self.name = QLabel("No file or folder selected")
 
         layout.addWidget(self.name)
-
-        container = QFrame()
-        hbox = QHBoxLayout(container)
-        
-        self.type = QLabel("No file selected")
-        hbox.addWidget(QLabel("File Type: "))
-        hbox.addWidget(self.type)
-        
-        layout.addWidget(container)
-
-        container = QFrame()
-        hbox = QHBoxLayout(container)
-        hbox.addWidget(QLabel("Remove"))
-        hbox.addWidget(QLabel("Duplicate"))
-
-        layout.addWidget(container)
-
         layout.addStretch()
+    
+    def _build_file(self, props: File) -> list: 
+        """Returns QLabel of File Properties"""
+        return [
+            QLabel(f"Size: {props.size}")
+        ]
 
-class FilePreviewWidget(QWidget):
-    def __init__(self, parent = None) -> None:
-        super().__init__(parent)
+    def _build_folder(self, props: Folder) -> list: 
+        """Returns QLabels of Folder Properties"""
+        return [
+            QLabel(f"Size: {props.total_size}"),
+            QLabel(f"Content Amount: {props.item_count}")
+        ]
 
-        self.setObjectName("FilePreviewWidget")
-        self.setStyleSheet("""
-            FilePreviewWidget { border: 2px solid grey; }
-        """)
+    def _build_image(self, props: Image) -> list:
+        """Returns QLabels of Image Properties"""
+        return [
+            QLabel(f"Size: {props.size}"),
+            QLabel(f"Image Size: {props.width}x{props.height}"),
+            QLabel(f"Image Type: {props.format}")
+        ]
+
+    def update_properties(self, props: File | Folder) -> None:
+        while self.layout().count() > 1:
+            item = self.layout().takeAt(1)
+            if item.widget():
+                item.widget().deleteLater()
+        
+        self.name.setText(props.name)
+
+        builder = self.WIDGET_REGISTRY.get(type(props))
+        if builder:
+            for widget in builder(props):
+                self.layout().addWidget(widget)
+        
+        self.layout().addStretch()
 
 class FileSystemWidget(QTreeWidget):
-    item_selected = Signal(str, bool)
+    item_selected = Signal(object)
 
     def __init__(self, item_colors: dict[str, str], file_path: str, parent = None) -> None:
         super().__init__(parent)
@@ -96,48 +124,79 @@ class FileSystemWidget(QTreeWidget):
 
         for entry in sorted(path.iterdir()):
             if entry.is_dir():
-                entries.append((entry.stem, self._load_entries(entry), "Folder"))
+                entries.append((entry.stem, self._load_entries(entry), "Folder", entry))
             else:
-                entries.append((entry.stem, str(entry.suffix) if entry.suffix else "None"))
+                entries.append((entry.stem, str(entry.suffix) if entry.suffix else "None", entry))
 
         return entries
 
     def _build_tree(self, parent, entries: list[tuple[str, str, str] | tuple[str, str]]) -> None:
         for entry in entries:
-            if len(entry) == 3:
-                name, content, fname = entry
-            else:
-                name, content = entry
+            if len(entry) == 4:
+                name, content, _, path = entry
+            elif len(entry) == 3:
+                name, content, path = entry
 
             if isinstance(content, list):
                 item = QTreeWidgetItem(parent, [name])
                 item.setForeground(0, QColor(self.item_colors["folder"]))
                 item.setExpanded(True)
+                item.setData(0, Qt.UserRole, path)
                 self._build_tree(item, content)
 
             else:
                 item = QTreeWidgetItem(parent, [name])
-                item.setForeground(0, QColor(self._get_file_color(content)))
+                item.setData(0, Qt.UserRole, path)
                 item.setForeground(1, QColor(self.item_colors["file_size"]))
 
-    def _get_file_color(self, extension: str) -> str:
-        ext_map = {
-            ".scene": "scene_file",
-            ".py":    "script_file",
-            ".cfg":   "config_file",
-            ".ini":   "config_file",
-            ".toml":  "config_file",
-            ".json":  "config_file",
-            ".md":    "doc_file",
-            ".txt":   "doc_file",
-            ".rst":   "doc_file",
-        }
-        key = ext_map.get(extension, "file")
-        return self.item_colors[key]
+    def _format_size(self, size: int) -> str:
+        for unit in ("B", "KB", "MB", "GB"):
+            if size < 1024:
+                return f"{size} {unit}"
+            size /= 1024
 
     def _on_file_selected(self, item: QTreeWidgetItem, column: int) -> None:
-        is_folder = item.childCount() > 0
-        self.item_selected.emit(item.text(0), is_folder)
+        path: Path = item.data(0, Qt.UserRole)
+        if path is None:
+            return
+
+        if path.is_dir():
+            contents = list(path.iterdir())
+            props = Folder(
+                name = path.name,
+                total_size = self._format_size(sum(f.stat().st_size for f in contents if f.is_file())),
+                item_count = len(contents)
+            )
+
+        elif path.suffix.lower() in (".png", ".jpg", ".jpeg", ".bmp", ".gif"):
+            stat = path.stat()
+
+            try:
+                with PILImage.open(path) as img:
+                    w, h = img.size
+
+                props = Image(
+                    name = path.name,
+                    size = self._format_size(path.stat().st_size),
+                    width = w,
+                    height = h,
+                    format = path.suffix.upper().lstrip(".")
+                )
+
+            except:
+                props = Image(
+                    name = path.name,
+                    size = self._format_size(path.stat().st_size),
+                    format = path.suffix.upper().lstrip(".")
+                )
+        
+        else:
+            props = File(
+                name = path.name,
+                size = self._format_size(path.stat().st_size)
+            )
+
+        self.item_selected.emit(props)
 
 class FileSystemPanel(Panel):
     def __init__(self, item_colors: dict[str, str], file_path: str, parent = None) -> None:
@@ -166,5 +225,5 @@ class FileSystemPanel(Panel):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(splitter)
     
-    def _on_file_selected(self, name: str, is_folder: bool) -> None:
-        self.file_properties.name.setText(name)
+    def _on_file_selected(self, props: File | Folder) -> None:
+        self.file_properties.update_properties(props)
