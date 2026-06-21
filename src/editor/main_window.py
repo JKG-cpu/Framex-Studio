@@ -69,7 +69,7 @@ class MainWindow(QMainWindow):
 
         # Top Row
         self.scene_view = SceneView(
-            item_colors = self.storage.color.scene_view
+            theme = self.storage.color.scene_view
         )
         self.properties_panel = PropertiesPanel()
 
@@ -81,7 +81,7 @@ class MainWindow(QMainWindow):
 
         # Bottom
         self.file_system_panel = FileSystemPanel(
-            item_colors = self.storage.color.file_system,
+            theme = self.storage.color.file_system,
             file_path = join(*file_path)
         )
 

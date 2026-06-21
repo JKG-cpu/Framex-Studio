@@ -5,9 +5,10 @@ from PySide6.QtWidgets import (
     QTreeWidget, QTreeWidgetItem, 
     QSplitter, QHBoxLayout, QVBoxLayout,
     QWidget, QLabel, QFrame,
-    QApplication, QStyle
+    QApplication, QStyle,
+    QStyledItemDelegate
 )
-from PySide6.QtGui import QColor
+from PySide6.QtGui import QColor, QKeyEvent, QMouseEvent, QPalette
 from PySide6.QtCore import Qt, Signal
 from pathlib import Path
 from PIL import Image as PILImage
@@ -16,6 +17,16 @@ from .base_panel import Panel
 from .file_props import *
 
 __all__ = ["FileSystemPanel"]
+
+class PreserveForegroundDelegate(QStyledItemDelegate):
+    def initStyleOption(self, option, index):
+        super().initStyleOption(option, index)
+        foreground = index.data(Qt.ItemDataRole.ForegroundRole)
+        if foreground:
+            option.palette.setColor(
+                QPalette.ColorRole.HighlightedText,
+                foreground.color()
+            )
 
 class FilePreviewWidget(QWidget):
     def __init__(self, parent = None) -> None:
@@ -96,15 +107,42 @@ class FilePropertiesWidget(QWidget):
 class FileSystemWidget(QTreeWidget):
     item_selected = Signal(object)
 
-    def __init__(self, item_colors: dict[str, str], file_path: str, parent = None) -> None:
+    def __init__(self, theme: dict[str, str], file_path: str, parent = None) -> None:
         super().__init__(parent)
-        self.item_colors = item_colors
+        self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.setItemDelegate(PreserveForegroundDelegate(self))
+
+        self.theme = theme
         self.file_path: Path = Path(file_path)
 
         self.setObjectName("FileSystemWidget")
-        self.setStyleSheet("""
-            FileSystemWidget::item { padding: 4px 0px; } 
-            FileSystemWidget { border: 2px solid grey; }
+        self.setStyleSheet(f"""
+            FileSystemWidget {{
+                background-color: {self.theme.get("background_alt")};
+                border: 2px solid {self.theme.get("border")};
+                outline: none;
+            }}
+
+            FileSystemWidget::item {{ 
+                padding: 4px 0px;
+                background-color: {self.theme.get("background_alt")};
+            }}
+
+            FileSystemWidget::item:hover {{
+                background-color: {self.theme.get("hover")};
+            }}
+
+            FileSystemWidget::item:selected {{
+                background-color: {self.theme.get("background_alt")};
+            }}
+
+            QHeaderView::section {{
+                background-color: {self.theme.get("header_background")};
+                color: {self.theme.get("text")};
+                padding: 4px;
+                border: none;
+                border-bottom: 2px solid {self.theme.get("border")};
+            }}
         """)
 
         self.setColumnCount(1)
@@ -120,15 +158,16 @@ class FileSystemWidget(QTreeWidget):
 
     def _load_entries(self, path: Path = None) -> list:
         path = path or self.file_path
-        entries = []
+        folders = []
+        files = []
 
         for entry in sorted(path.iterdir()):
             if entry.is_dir():
-                entries.append((entry.stem, self._load_entries(entry), "Folder", entry))
+                folders.append((entry.name, self._load_entries(entry), "Folder", entry))
             else:
-                entries.append((entry.stem, str(entry.suffix) if entry.suffix else "None", entry))
+                files.append((entry.name, str(entry.suffix) if entry.suffix else "None", entry))
 
-        return entries
+        return folders + files
 
     def _build_tree(self, parent, entries: list[tuple[str, str, str] | tuple[str, str]]) -> None:
         for entry in entries:
@@ -139,22 +178,25 @@ class FileSystemWidget(QTreeWidget):
 
             if isinstance(content, list):
                 item = QTreeWidgetItem(parent, [name])
-                item.setForeground(0, QColor(self.item_colors["folder"]))
-                item.setExpanded(True)
+                item.setChildIndicatorPolicy(QTreeWidgetItem.ChildIndicatorPolicy.ShowIndicator)
+                item.setForeground(0, QColor(self.theme["folder"]))
+                if content: item.setExpanded(True)
                 item.setData(0, Qt.UserRole, path)
                 self._build_tree(item, content)
 
             else:
                 item = QTreeWidgetItem(parent, [name])
                 item.setData(0, Qt.UserRole, path)
-                item.setForeground(1, QColor(self.item_colors["file_size"]))
+                item.setForeground(0, QColor(self.theme["file"]))
 
+    # Formatting / Theme
     def _format_size(self, size: int) -> str:
         for unit in ("B", "KB", "MB", "GB"):
             if size < 1024:
                 return f"{size} {unit}"
             size /= 1024
 
+    # File Selected => File Properties Widget
     def _on_file_selected(self, item: QTreeWidgetItem, column: int) -> None:
         path: Path = item.data(0, Qt.UserRole)
         if path is None:
@@ -199,14 +241,19 @@ class FileSystemWidget(QTreeWidget):
         self.item_selected.emit(props)
 
 class FileSystemPanel(Panel):
-    def __init__(self, item_colors: dict[str, str], file_path: str, parent = None) -> None:
+    def __init__(self, theme: dict[str, str], file_path: str, parent = None) -> None:
         super().__init__(parent)
 
-        self.item_colors = item_colors
+        self.theme = theme
         self.setObjectName("FileSystemPanel")
+        self.setStyleSheet(f"""
+            FileSystemPanel {{
+                background-color: {self.theme.get("background")}
+            }}
+        """)
 
         self.file_system_widget = FileSystemWidget(
-            item_colors = self.item_colors,
+            theme = self.theme,
             file_path = file_path
         )
         self.file_system_widget.item_selected.connect(self._on_file_selected)

@@ -18,13 +18,13 @@ from .base_panel import Panel
 __all__ = ["SceneView"]
 
 class SceneView(Panel):
-    def __init__(self, item_colors: dict[str, str], parent = None) -> None:
+    def __init__(self, theme: dict[str, str], parent = None) -> None:
         super().__init__(parent)
-        self.item_colors: dict[str, str] = item_colors
+        self.theme: dict[str, str] = theme
 
         self.setMouseTracking(True)
         self.setObjectName("SceneView")
-        self.setStyleSheet(self.styleSheet() + f"background: {self.item_colors["background"]}; color: {self.item_colors["text"]}")
+        self.setStyleSheet(self.styleSheet() + f"background: {self.theme["background"]}; color: {self.theme["text"]}")
 
         # Icons
         style = QApplication.style()
@@ -47,7 +47,8 @@ class SceneView(Panel):
             BaseObject()
         ]
         b = BaseObject()
-        b.move_to(500, 500)
+        b.move_to(500, 500
+        )
         b.resize(100, 100)
         b.color = "#FF007F"
         self.objects.append(b)
@@ -224,7 +225,7 @@ class SceneView(Panel):
         start_world_y = (top_left_world.y() // self.snap) * self.snap
         end_world_y = (bottom_right_world.y() // self.snap) * self.snap + self.snap
 
-        painter.setPen(QPen(QColor(self.item_colors["x_axis"])))
+        painter.setPen(QPen(QColor(self.theme["x_axis"])))
 
         world_x = start_world_x
         while world_x <= end_world_x:
@@ -232,7 +233,7 @@ class SceneView(Panel):
             painter.drawLine(int(screen_x), 0, int(screen_x), self.height())
             world_x += self.snap
         
-        painter.setPen(QPen(QColor(self.item_colors["y_axis"])))
+        painter.setPen(QPen(QColor(self.theme["y_axis"])))
 
         world_y = start_world_y
         while world_y <= end_world_y:
@@ -248,7 +249,7 @@ class SceneView(Panel):
 
         font = QFont("Arial", 8)
         painter.setFont(font)
-        painter.setPen(QPen(QColor(self.item_colors["coord_text"])))
+        painter.setPen(QPen(QColor(self.theme["coord_text"])))
 
         top_left_world = self.screen_to_world(QPointF(0, 0))
         bottom_right_world = self.screen_to_world(QPointF(self.width(), self.height()))
@@ -282,13 +283,13 @@ class SceneView(Panel):
         x, y = int(origin_screen.x()), int(origin_screen.y())
 
         size = 8
-        painter.setPen(QPen(QColor(self.item_colors["origin"]), 2))
+        painter.setPen(QPen(QColor(self.theme["origin"]), 2))
         painter.drawLine(x - size, y, x + size, y)
         painter.drawLine(x, y - size, x, y + size)
 
         # "0,0" label
         painter.setFont(QFont("Arial", 8))
-        painter.setPen(QPen(QColor(self.item_colors["origin"])))
+        painter.setPen(QPen(QColor(self.theme["origin"])))
         painter.drawText(x + 6, y - 4, "0, 0")
 
     def draw_object(self, painter: QPainter, obj: BaseObject) -> None:
@@ -298,7 +299,7 @@ class SceneView(Panel):
         screen_h = obj.size.y() * obj.scale.y() * self.zoom
 
         if obj.selected:
-            painter.setPen(QPen(QColor(self.item_colors["selection"]), 4))
+            painter.setPen(QPen(QColor(self.theme["selection"]), 4))
         
         else:
             painter.setPen(Qt.NoPen)
@@ -321,7 +322,7 @@ class SceneView(Panel):
             painter.setClipRect(clip_rect)
 
             # Background
-            painter.fillRect(self.rect(), self.item_colors["background"])
+            painter.fillRect(self.rect(), self.theme["background"])
 
             for obj in self.objects:
                 self.draw_object(
