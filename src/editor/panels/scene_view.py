@@ -266,7 +266,7 @@ class SceneView(Panel):
             if int(world_x) != 0:
                 screen_x = (world_x + self.pan.x()) * self.zoom
                 if screen_x > 20:
-                    painter.drawText(int(screen_x) + 3, 12, str(int(world_x)))
+                    painter.drawText(int(screen_x) + 3, 18, str(int(world_x)))
             world_x += self.snap
         
         # Draw Y-axis coordinate text numbers

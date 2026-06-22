@@ -32,12 +32,13 @@ class FilePreviewWidget(QWidget):
     def __init__(self, parent = None) -> None:
         super().__init__(parent)
 
+        self.setAttribute(Qt.WA_StyledBackground, True)
         self.setObjectName("FilePreviewWidget")
 
 class FilePropertiesWidget(QWidget):
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
-
+        self.setAttribute(Qt.WA_StyledBackground, True)
         self.setObjectName("FilePropertiesWidget")
 
         self.WIDGET_REGISTRY = {

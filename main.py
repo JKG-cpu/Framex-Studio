@@ -1,7 +1,6 @@
 # ===========
 # Entry Point
 # ===========
-import qdarktheme
 from PySide6.QtWidgets import QApplication
 from os import system, name
 
@@ -12,8 +11,6 @@ def cc():
 
 if __name__ == "__main__":
     app = QApplication()
-
-    qdarktheme.setup_theme("dark")
 
     window = MainWindow(
         "test_game_folder"

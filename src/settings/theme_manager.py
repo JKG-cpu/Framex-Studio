@@ -1,4 +1,5 @@
 import json
+import qdarktheme
 from pathlib import Path
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QApplication
@@ -11,7 +12,6 @@ class ThemeManager(QObject):
         self._file_path = Path(__file__).parent / "color.json"
         self._mode = "dark"
         self._data = {}
-        self._base = ""
         self._load()
 
     def _load(self) -> None:
@@ -34,20 +34,25 @@ class ThemeManager(QObject):
     def file_system_colors(self) -> dict:
         return self._get_colors("file_system")
 
+    # StyleSheet
+    #region
     def generate_stylesheet(self) -> str:
         main = self.main_colors
         fs = self.file_system_colors
 
         return f"""
+            /* Main Window */
             QMainWindow#MainWindow {{
                 background-color: {main["background"]};
                 color: {main["text"]};
             }}
 
+            /* Each Panel "Section" */
             SceneView, PropertiesPanel, FileSystemPanel {{
                 border: 2px solid {main["border"]};
             }}
 
+            /* Different Bars in SceneView */
             QFrame#SceneviewTopBar, QFrame#SceneviewEditBar, QFrame#SceneviewBottomBar {{
                 background: {main["background_alt"]};
             }}
@@ -60,9 +65,11 @@ class ThemeManager(QObject):
                 background-color: {fs["background"]};
             }}
 
+            /* File System Panel */
             FileSystemWidget#FileSystemWidget {{
                 background-color: {fs["background_alt"]};
                 border: 2px solid {fs["border"]};
+                border-radius: 0;
                 outline: none;
             }}
 
@@ -80,6 +87,7 @@ class ThemeManager(QObject):
                 color: {fs["selection_text"]};
             }}
 
+            /* Text on top of file explorer */
             QHeaderView::section {{
                 background-color: {fs["header_background"]};
                 color: {fs["text"]};
@@ -88,12 +96,23 @@ class ThemeManager(QObject):
                 border-bottom: 2px solid {fs["border"]};
             }}
 
-            #FilePreviewWidget {{
-                border: 2px solid {main["border"]};
+            /* File Preview Widget */
+            FilePreviewWidget#FilePreviewWidget {{
+                background-color: {fs["background_alt"]};
+                border: 2px solid {fs["border"]};
+                outline: none;
+            }}
+
+            /* File Properties Widget */
+            #FilePropertiesWidget {{
+                background-color: {fs["background_alt"]};
+                border: 2px solid {fs["border"]};
+                outline: none;
             }}
 
             #FilePropertiesWidget * {{
-                border: 1px solid {main["border"]};
+                border: 2px solid {main["border"]};
+                border-radius: 8px;
                 padding: 10px;
                 margin-top: 5px;
                 margin-bottom: 5px;
@@ -103,9 +122,14 @@ class ThemeManager(QObject):
                 qproperty-alignment: AlignCenter;
             }}
 
+            /* Buttons */
             QPushButton {{
                 background: transparent;
                 border: none;
+            }}
+
+            QPushButton:hover {{
+                background: transparent;
             }}
         """
 
@@ -114,12 +138,13 @@ class ThemeManager(QObject):
         if app is None:
             return
 
-        if not self._base:
-            self._base = app.styleSheet() or ""
-
-        app.setStyleSheet(self._base + self.generate_stylesheet())
+        qdarktheme.setup_theme(self._mode)
+        app.setStyleSheet(app.styleSheet() + self.generate_stylesheet())
         self.theme_changed.emit(self._mode)
+    #endregion
 
+    # Mode
+    #region
     @property
     def mode(self) -> str:
         return self._mode
@@ -132,3 +157,4 @@ class ThemeManager(QObject):
     def toggle_theme(self) -> None:
         new_mode = "light" if self._mode == "dark" else "dark"
         self.set_mode(new_mode)
+    #endregion
