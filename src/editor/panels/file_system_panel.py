@@ -33,27 +33,12 @@ class FilePreviewWidget(QWidget):
         super().__init__(parent)
 
         self.setObjectName("FilePreviewWidget")
-        self.setStyleSheet("""
-            FilePreviewWidget { border: 2px solid grey; }
-        """)
 
 class FilePropertiesWidget(QWidget):
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
 
         self.setObjectName("FilePropertiesWidget")
-        self.setStyleSheet("""
-            #FilePropertiesWidget * { 
-                border: 1px solid grey; 
-                padding: 10px;
-                margin-top: 5px;
-                margin-bottom: 5px;
-            }
-            #FilePropertiesWidget QLabel { 
-                qproperty-alignment: AlignCenter;
-            }
-        """
-        )
 
         self.WIDGET_REGISTRY = {
             File: self._build_file,
@@ -117,34 +102,6 @@ class FileSystemWidget(QTreeWidget):
         self.file_path: Path = Path(file_path)
 
         self.setObjectName("FileSystemWidget")
-        self.setStyleSheet(f"""
-            FileSystemWidget {{
-                background-color: {self.theme.get("background_alt")};
-                border: 2px solid {self.theme.get("border")};
-                outline: none;
-            }}
-
-            FileSystemWidget::item {{ 
-                padding: 4px 0px;
-                background-color: {self.theme.get("background_alt")};
-            }}
-
-            FileSystemWidget::item:hover {{
-                background-color: {self.theme.get("hover")};
-            }}
-
-            FileSystemWidget::item:selected {{
-                background-color: {self.theme.get("hover")};
-            }}
-
-            QHeaderView::section {{
-                background-color: {self.theme.get("header_background")};
-                color: {self.theme.get("text")};
-                padding: 4px;
-                border: none;
-                border-bottom: 2px solid {self.theme.get("border")};
-            }}
-        """)
 
         self.setColumnCount(1)
         self.setHeaderLabel("Explorer")
@@ -256,11 +213,6 @@ class FileSystemPanel(Panel):
 
         self.theme = theme
         self.setObjectName("FileSystemPanel")
-        self.setStyleSheet(f"""
-            FileSystemPanel {{
-                background-color: {self.theme.get("background")}
-            }}
-        """)
 
         self.file_system_widget = FileSystemWidget(
             theme = self.theme,

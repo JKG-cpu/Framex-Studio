@@ -7,13 +7,11 @@ from PySide6.QtWidgets import (
     QWidget
 )
 from PySide6.QtCore import Qt
-from typing import Literal
 from os.path import join
-import qdarktheme
 
 from .panels import *
 from .scene_editor import SceneEditor
-from ..settings import *
+from ..settings import ThemeManager
 
 __all__ = ["MainWindow"]
 
@@ -54,11 +52,13 @@ class MainWindow(QMainWindow):
         super().__init__()
 
         self.setWindowTitle("Framex Studio Editor")
+        self.setObjectName("MainWindow")
         self.resize(1600, 1000)
         self.setContentsMargins(8, 8, 8, 8)
 
-        # Color Schemes
-        self.storage = Storage()
+        # Theme Manager
+        self.theme_manager = ThemeManager()
+        self.theme_manager.apply()
 
         # Options Bar
         self.options_widget = QWidget()
@@ -69,7 +69,7 @@ class MainWindow(QMainWindow):
 
         # Top Row
         self.scene_view = SceneView(
-            theme = self.storage.color.scene_view
+            theme = self.theme_manager.scene_view_colors
         )
         self.properties_panel = PropertiesPanel()
 
@@ -81,7 +81,7 @@ class MainWindow(QMainWindow):
 
         # Bottom
         self.file_system_panel = FileSystemPanel(
-            theme = self.storage.color.file_system,
+            theme = self.theme_manager.file_system_colors,
             file_path = join(*file_path)
         )
 

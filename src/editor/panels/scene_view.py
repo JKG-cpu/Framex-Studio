@@ -25,7 +25,6 @@ class SceneView(Panel):
         self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
         self.setMouseTracking(True)
         self.setObjectName("SceneView")
-        self.setStyleSheet(self.styleSheet() + f"background: {self.theme["background"]}; color: {self.theme["text"]}")
 
         # Icons
         style = QApplication.style()

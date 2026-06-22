@@ -15,9 +15,6 @@ if __name__ == "__main__":
 
     qdarktheme.setup_theme("dark")
 
-    with open("styling.qss") as f:
-        app.setStyleSheet(app.styleSheet() + f.read())
-
     window = MainWindow(
         "test_game_folder"
     )

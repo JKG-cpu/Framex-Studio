@@ -1,8 +1,0 @@
-#SceneView, #PropertiesPanel, #FileSystemPanel {
-    border: 2px solid white;
-}
-
-QPushButton {
-    background: transparent;
-    border: none;
-}
