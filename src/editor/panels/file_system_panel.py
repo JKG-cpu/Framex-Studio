@@ -8,7 +8,7 @@ from PySide6.QtWidgets import (
     QApplication, QStyle,
     QStyledItemDelegate
 )
-from PySide6.QtGui import QColor, QKeyEvent, QMouseEvent, QPalette
+from PySide6.QtGui import QColor, QKeyEvent, QMouseEvent, QPalette, QShortcut
 from PySide6.QtCore import Qt, Signal
 from pathlib import Path
 from PIL import Image as PILImage
@@ -111,6 +111,7 @@ class FileSystemWidget(QTreeWidget):
         super().__init__(parent)
         self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.setItemDelegate(PreserveForegroundDelegate(self))
+        self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
 
         self.theme = theme
         self.file_path: Path = Path(file_path)
@@ -133,7 +134,7 @@ class FileSystemWidget(QTreeWidget):
             }}
 
             FileSystemWidget::item:selected {{
-                background-color: {self.theme.get("background_alt")};
+                background-color: {self.theme.get("hover")};
             }}
 
             QHeaderView::section {{
@@ -239,6 +240,15 @@ class FileSystemWidget(QTreeWidget):
             )
 
         self.item_selected.emit(props)
+
+    # Key Presses
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        key = event.key()
+
+        if key == Qt.Key.Key_Escape:
+            self.clearSelection()
+        
+        super().keyPressEvent(event)
 
 class FileSystemPanel(Panel):
     def __init__(self, theme: dict[str, str], file_path: str, parent = None) -> None:

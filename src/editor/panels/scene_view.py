@@ -22,6 +22,7 @@ class SceneView(Panel):
         super().__init__(parent)
         self.theme: dict[str, str] = theme
 
+        self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
         self.setMouseTracking(True)
         self.setObjectName("SceneView")
         self.setStyleSheet(self.styleSheet() + f"background: {self.theme["background"]}; color: {self.theme["text"]}")
