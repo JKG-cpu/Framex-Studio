@@ -61,9 +61,6 @@ class ThemeManager(QObject):
             }}
 
             /* Properties Panel */
-            PropertiesPanel {{
-                background-color: {main["background"]};
-            }}
 
             /* File System Panel */
             FileSystemPanel {{

@@ -44,7 +44,10 @@ class FilePropertiesWidget(QWidget):
         self.WIDGET_REGISTRY = {
             File: self._build_file,
             Folder: self._build_folder,
-            Image: self._build_image
+            Image: self._build_image,
+            Scene: self._build_scene,
+            Script: self._build_script,
+            Prefab: self._build_prefab
         }
 
         layout = QVBoxLayout(self)
@@ -73,6 +76,24 @@ class FilePropertiesWidget(QWidget):
             QLabel(f"Size: {props.size}"),
             QLabel(f"Image Size: {props.width}x{props.height}"),
             QLabel(f"Image Type: {props.format}")
+        ]
+
+    def _build_scene(self, props: Scene) -> list:
+        """Returns QLabel of Scene Properties"""
+        return [
+            QLabel("Scene")
+        ]
+
+    def _build_script(self, props: Script) -> list:
+        """Returns QLabel of Script Properties"""
+        return [
+            QLabel("Python Script")
+        ]
+
+    def _build_prefab(self, props: Prefab) -> list:
+        """Returns QLabel of Prefab Properties"""
+        return [
+            QLabel("Prefab")
         ]
 
     def update_properties(self, props: File | Folder) -> None:
@@ -122,9 +143,9 @@ class FileSystemWidget(QTreeWidget):
 
         for entry in sorted(path.iterdir()):
             if entry.is_dir():
-                folders.append((entry.name, self._load_entries(entry), "Folder", entry))
+                folders.append((entry.stem, self._load_entries(entry), "Folder", entry))
             else:
-                files.append((entry.name, str(entry.suffix) if entry.suffix else "None", entry))
+                files.append((entry.stem, str(entry.suffix) if entry.suffix else "None", entry))
 
         return folders + files
 
@@ -152,7 +173,7 @@ class FileSystemWidget(QTreeWidget):
     def _format_size(self, size: int) -> str:
         for unit in ("B", "KB", "MB", "GB"):
             if size < 1024:
-                return f"{size} {unit}"
+                return f"{size:.2f} {unit}"
             size /= 1024
 
     # File Selected => File Properties Widget
@@ -161,39 +182,66 @@ class FileSystemWidget(QTreeWidget):
         if path is None:
             return
 
+        image_types = [".png", ".jpg", ".jpeg", ".bmp", ".gif"]
+
+        # Folder
         if path.is_dir():
             contents = list(path.iterdir())
             props = Folder(
-                name = path.name,
-                total_size = self._format_size(sum(f.stat().st_size for f in contents if f.is_file())),
+                name = path.stem,
                 item_count = len(contents)
             )
 
-        elif path.suffix.lower() in (".png", ".jpg", ".jpeg", ".bmp", ".gif"):
-            stat = path.stat()
-
+        # Image
+        elif path.suffix.lower() in image_types:
             try:
                 with PILImage.open(path) as img:
                     w, h = img.size
 
                 props = Image(
-                    name = path.name,
-                    size = self._format_size(path.stat().st_size),
+                    name = path.stem,
+                    extension = path.suffix.lower(),
                     width = w,
                     height = h,
-                    format = path.suffix.upper().lstrip(".")
+                    type = image_types[path.suffix.lower()]
                 )
 
             except:
                 props = Image(
-                    name = path.name,
-                    size = self._format_size(path.stat().st_size),
-                    format = path.suffix.upper().lstrip(".")
+                    name = path.stem,
+                    extension = path.suffix.lower(),
+                    type = image_types[path.suffix.lower()]
                 )
         
+        # Scenes + Prefabs
+        elif path.suffix.lower() == ".json" and (
+            ".scene" in path.stem or ".prefab" in path.stem
+        ):
+            # Scene
+            if ".scene" in path.stem:
+                props = Scene(
+                    name = path.stem,
+                    extension = path.suffix.lower()
+                )
+
+            # Prefab
+            elif ".prefab" in path.stem:
+                props = Prefab(
+                    name = path.stem,
+                    extension = path.suffix.lower()
+                )
+
+        # Scripts
+        elif path.suffix.lower() == ".py":
+            props = Script(
+                name = path.stem,
+                extension = path.suffix.lower()
+            )
+
+        # File
         else:
             props = File(
-                name = path.name,
+                name = path.stem,
                 size = self._format_size(path.stat().st_size)
             )
 
