@@ -48,24 +48,28 @@ class ThemeManager(QObject):
             }}
 
             /* Each Panel "Section" */
-            SceneView, PropertiesPanel, FileSystemPanel {{
+            QWidget#SettingsBar, 
+            HierarchyPanel, 
+            SceneView, 
+            PropertiesPanel {{
                 border: 2px solid {main["border"]};
             }}
 
-            /* Different Bars in SceneView */
+            /* Different Control Bars in SceneView */
             QFrame#SceneviewTopBar, QFrame#SceneviewEditBar, QFrame#SceneviewBottomBar {{
                 background: {main["background_alt"]};
             }}
 
+            /* Properties Panel */
             PropertiesPanel {{
                 background-color: {main["background"]};
             }}
 
+            /* File System Panel */
             FileSystemPanel {{
                 background-color: {fs["background"]};
             }}
 
-            /* File System Panel */
             FileSystemWidget#FileSystemWidget {{
                 background-color: {fs["background_alt"]};
                 border: 2px solid {fs["border"]};
@@ -130,6 +134,12 @@ class ThemeManager(QObject):
 
             QPushButton:hover {{
                 background: transparent;
+            }}
+
+            /* Splitter (V) */
+            QSplitter {{
+                padding-top: 5px;
+                padding-bottom: 5px;
             }}
         """
 

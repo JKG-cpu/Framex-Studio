@@ -211,6 +211,7 @@ class FileSystemWidget(QTreeWidget):
 class FileSystemPanel(Panel):
     def __init__(self, theme: dict[str, str], file_path: str, parent = None) -> None:
         super().__init__(parent)
+        self.setContentsMargins(0, 0, 0, 0)
 
         self.theme = theme
         self.setObjectName("FileSystemPanel")

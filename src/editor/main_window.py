@@ -3,7 +3,7 @@
 # =============================
 from PySide6.QtWidgets import (
     QMainWindow,
-    QSplitter,
+    QSplitter, QHBoxLayout,
     QWidget
 )
 from PySide6.QtCore import Qt
@@ -54,7 +54,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Framex Studio Editor")
         self.setObjectName("MainWindow")
         self.resize(1600, 1000)
-        self.setContentsMargins(8, 8, 8, 8)
+        self.setContentsMargins(12, 12, 12, 12)
 
         # Theme Manager
         self.theme_manager = ThemeManager()
@@ -62,12 +62,14 @@ class MainWindow(QMainWindow):
 
         # Options Bar
         self.options_widget = QWidget()
-        self.options_widget.setMaximumHeight(20)
+        self.options_widget.setObjectName("SettingsBar")
+        self.options_widget.setMaximumHeight(30)
 
         # Scene Editor
         self.scene_editor = SceneEditor()
 
         # Top Row
+        self.hierarchy_panel = HierarchyPanel()
         self.scene_view = SceneView(
             theme = self.theme_manager.scene_view_colors
         )
@@ -76,6 +78,7 @@ class MainWindow(QMainWindow):
         top_splitter = QSplitter(orientation = Qt.Horizontal)
         top_splitter.setHandleWidth(0)
         
+        top_splitter.addWidget(self.hierarchy_panel)
         top_splitter.addWidget(self.scene_view)
         top_splitter.addWidget(self.properties_panel)
 
