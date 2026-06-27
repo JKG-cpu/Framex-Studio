@@ -3,7 +3,7 @@
 # ========================
 from PySide6.QtWidgets import (
     QTreeWidget, QTreeWidgetItem, 
-    QSplitter, QHBoxLayout, QVBoxLayout,
+    QSplitter, QHBoxLayout, QVBoxLayout, QGridLayout, QScrollArea,
     QWidget, QLabel, QFrame,
     QApplication, QStyle,
     QStyledItemDelegate
@@ -18,15 +18,12 @@ from .file_props import *
 
 __all__ = ["FileSystemPanel"]
 
-class PreserveForegroundDelegate(QStyledItemDelegate):
-    def initStyleOption(self, option, index):
-        super().initStyleOption(option, index)
-        foreground = index.data(Qt.ItemDataRole.ForegroundRole)
-        if foreground:
-            option.palette.setColor(
-                QPalette.ColorRole.HighlightedText,
-                foreground.color()
-            )
+class FileTile(QWidget):
+    def __init__(self, entry: Path) -> None:
+        super().__init__(None)
+
+        layout = QVBoxLayout(self)
+        layout.addWidget(QLabel(f"{entry.stem}"))
 
 class FilePreviewWidget(QWidget):
     def __init__(self, parent = None) -> None:
@@ -35,89 +32,42 @@ class FilePreviewWidget(QWidget):
         self.setAttribute(Qt.WA_StyledBackground, True)
         self.setObjectName("FilePreviewWidget")
 
-class FilePropertiesWidget(QWidget):
-    def __init__(self, parent=None) -> None:
-        super().__init__(parent)
-        self.setAttribute(Qt.WA_StyledBackground, True)
-        self.setObjectName("FilePropertiesWidget")
-
-        self.WIDGET_REGISTRY = {
-            File: self._build_file,
-            Folder: self._build_folder,
-            Image: self._build_image,
-            Scene: self._build_scene,
-            Script: self._build_script,
-            Prefab: self._build_prefab
-        }
+        self._scroll = QScrollArea()
+        self._scroll.setWidgetResizable(True)
 
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self._scroll)
 
-        self.name = QLabel("No file or folder selected")
+    def update_grid(self, path: Path) -> None:
+        old_widgets = self._scroll.takeWidget()
+        if old_widgets:
+            old_widgets.deleteLater()
 
-        layout.addWidget(self.name)
-        layout.addStretch()
-    
-    def _build_file(self, props: File) -> list: 
-        """Returns QLabel of File Properties"""
-        return [
-            QLabel(f"Size: {props.size}")
-        ]
+        container = QWidget()
+        grid = QGridLayout(container)
+        grid.setSpacing(8)
+        grid.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
 
-    def _build_folder(self, props: Folder) -> list: 
-        """Returns QLabels of Folder Properties"""
-        return [
-            QLabel(f"Size: {props.total_size}"),
-            QLabel(f"Content Amount: {props.item_count}")
-        ]
+        if path.is_dir():
+            entries = sorted(path.iterdir(), key = lambda p: (p.is_file(), p.name))
+            for i, entry in enumerate(entries):
+                tile = FileTile(entry)
+                row, col = divmod(i, 5)
+                grid.addWidget(tile)
+            
+            self._scroll.setWidget(container)
 
-    def _build_image(self, props: Image) -> list:
-        """Returns QLabels of Image Properties"""
-        return [
-            QLabel(f"Size: {props.size}"),
-            QLabel(f"Image Size: {props.width}x{props.height}"),
-            QLabel(f"Image Type: {props.format}")
-        ]
-
-    def _build_scene(self, props: Scene) -> list:
-        """Returns QLabel of Scene Properties"""
-        return [
-            QLabel("Scene")
-        ]
-
-    def _build_script(self, props: Script) -> list:
-        """Returns QLabel of Script Properties"""
-        return [
-            QLabel("Python Script")
-        ]
-
-    def _build_prefab(self, props: Prefab) -> list:
-        """Returns QLabel of Prefab Properties"""
-        return [
-            QLabel("Prefab")
-        ]
-
-    def update_properties(self, props: File | Folder) -> None:
-        while self.layout().count() > 1:
-            item = self.layout().takeAt(1)
-            if item.widget():
-                item.widget().deleteLater()
-        
-        self.name.setText(props.name)
-
-        builder = self.WIDGET_REGISTRY.get(type(props))
-        if builder:
-            for widget in builder(props):
-                self.layout().addWidget(widget)
-        
-        self.layout().addStretch()
+        else:
+            grid.addWidget(FileTile(path))
+            self._scroll.setWidget(container)
 
 class FileSystemWidget(QTreeWidget):
-    item_selected = Signal(object)
+    item_selected = Signal(Path)
 
     def __init__(self, theme: dict[str, str], file_path: str, parent = None) -> None:
         super().__init__(parent)
         self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.setItemDelegate(PreserveForegroundDelegate(self))
         self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
 
         self.theme = theme
@@ -128,13 +78,13 @@ class FileSystemWidget(QTreeWidget):
         self.setColumnCount(1)
         self.setHeaderLabel("Explorer")
         self.header().setDefaultAlignment(Qt.AlignmentFlag.AlignCenter)
-        
+
         self.setIndentation(25)
         self.setAnimated(True)
-        
-        self.itemClicked.connect(self._on_file_selected)
 
         self._build_tree(self, self._load_entries())
+
+        self.currentItemChanged.connect(self._on_item_changed)
 
     def _load_entries(self, path: Path = None) -> list:
         path = path or self.file_path
@@ -169,83 +119,14 @@ class FileSystemWidget(QTreeWidget):
                 item.setData(0, Qt.UserRole, path)
                 item.setForeground(0, QColor(self.theme["file"]))
 
-    # Formatting / Theme
-    def _format_size(self, size: int) -> str:
-        for unit in ("B", "KB", "MB", "GB"):
-            if size < 1024:
-                return f"{size:.2f} {unit}"
-            size /= 1024
-
-    # File Selected => File Properties Widget
-    def _on_file_selected(self, item: QTreeWidgetItem, column: int) -> None:
-        path: Path = item.data(0, Qt.UserRole)
-        if path is None:
+    def _on_item_changed(self, current, previous) -> None:
+        if current is None:
             return
 
-        image_types = [".png", ".jpg", ".jpeg", ".bmp", ".gif"]
+        path = current.data(0, Qt.UserRole)
 
-        # Folder
-        if path.is_dir():
-            contents = list(path.iterdir())
-            props = Folder(
-                name = path.stem,
-                item_count = len(contents)
-            )
-
-        # Image
-        elif path.suffix.lower() in image_types:
-            try:
-                with PILImage.open(path) as img:
-                    w, h = img.size
-
-                props = Image(
-                    name = path.stem,
-                    extension = path.suffix.lower(),
-                    width = w,
-                    height = h,
-                    type = image_types[path.suffix.lower()]
-                )
-
-            except:
-                props = Image(
-                    name = path.stem,
-                    extension = path.suffix.lower(),
-                    type = image_types[path.suffix.lower()]
-                )
-        
-        # Scenes + Prefabs
-        elif path.suffix.lower() == ".json" and (
-            ".scene" in path.stem or ".prefab" in path.stem
-        ):
-            # Scene
-            if ".scene" in path.stem:
-                props = Scene(
-                    name = path.stem,
-                    extension = path.suffix.lower()
-                )
-
-            # Prefab
-            elif ".prefab" in path.stem:
-                props = Prefab(
-                    name = path.stem,
-                    extension = path.suffix.lower()
-                )
-
-        # Scripts
-        elif path.suffix.lower() == ".py":
-            props = Script(
-                name = path.stem,
-                extension = path.suffix.lower()
-            )
-
-        # File
-        else:
-            props = File(
-                name = path.stem,
-                size = self._format_size(path.stat().st_size)
-            )
-
-        self.item_selected.emit(props)
+        if path:
+            self.item_selected.emit(path)
 
     # Key Presses
     def keyPressEvent(self, event: QKeyEvent) -> None:
@@ -268,21 +149,21 @@ class FileSystemPanel(Panel):
             theme = self.theme,
             file_path = file_path
         )
-        self.file_system_widget.item_selected.connect(self._on_file_selected)
+        self.file_system_widget.item_selected.connect(self._on_item_selected)
 
         self.file_preview = FilePreviewWidget()
-
-        self.file_properties = FilePropertiesWidget()
 
         splitter = QSplitter(orientation = Qt.Horizontal)
         splitter.setHandleWidth(0)
         splitter.addWidget(self.file_system_widget)
         splitter.addWidget(self.file_preview)
-        splitter.addWidget(self.file_properties)
+
+        splitter.setStretchFactor(0, 1)
+        splitter.setStretchFactor(1, 5)
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(splitter)
-    
-    def _on_file_selected(self, props: File | Folder) -> None:
-        self.file_properties.update_properties(props)
+
+    def _on_item_selected(self, path: Path) -> None:
+        self.file_preview.update_grid(path)
