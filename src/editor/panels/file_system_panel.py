@@ -8,22 +8,47 @@ from PySide6.QtWidgets import (
     QApplication, QStyle,
     QStyledItemDelegate
 )
-from PySide6.QtGui import QColor, QKeyEvent, QMouseEvent, QPalette, QShortcut
+from PySide6.QtGui import (
+    QColor, QPalette, QPixmap,
+    QKeyEvent, QMouseEvent, QShortcut
+)
 from PySide6.QtCore import Qt, Signal
-from pathlib import Path
 from PIL import Image as PILImage
+from pathlib import Path
+from os.path import join
 
 from .base_panel import Panel
 from .file_props import *
 
 __all__ = ["FileSystemPanel"]
 
+HEAD_PATH = Path(__file__).parent.parent.parent / "resources" / "icons" / "Files"
+ICON_PATHS = {
+    "file": Path(join(HEAD_PATH, "File.png")),
+    "json": Path(join(HEAD_PATH, "Json File.png")),
+    "py": Path(join(HEAD_PATH, "Python File.png")),
+    "python": Path(join(HEAD_PATH, "Python File.png")),
+    "tmx": Path(join(HEAD_PATH, "TMX File.png"))
+}
+
 class FileTile(QWidget):
     def __init__(self, entry: Path) -> None:
         super().__init__(None)
 
+        label = QLabel()
+
+        pixmap = QPixmap(str(self._get_icon(entry.suffix)))
+        label.setPixmap(
+            pixmap.scaled(64, 64, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.FastTransformation)
+        )
+
         layout = QVBoxLayout(self)
-        layout.addWidget(QLabel(f"{entry.stem}"))
+        layout.addWidget(label)
+
+    def _get_icon(self, extension: str) -> str:
+        path = ICON_PATHS.get(extension.lstrip("."), ICON_PATHS["file"])
+        print(path, path.exists())  # check path + whether file actually exists
+        return str(path)
 
 class FilePreviewWidget(QWidget):
     def __init__(self, parent = None) -> None:
@@ -47,14 +72,17 @@ class FilePreviewWidget(QWidget):
         container = QWidget()
         grid = QGridLayout(container)
         grid.setSpacing(8)
-        grid.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+        grid.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+        for col in range(5):
+            grid.setColumnStretch(col, 1)
 
         if path.is_dir():
             entries = sorted(path.iterdir(), key = lambda p: (p.is_file(), p.name))
             for i, entry in enumerate(entries):
                 tile = FileTile(entry)
                 row, col = divmod(i, 5)
-                grid.addWidget(tile)
+                grid.addWidget(tile, row, col)
             
             self._scroll.setWidget(container)
 
