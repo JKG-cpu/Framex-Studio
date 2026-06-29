@@ -40,6 +40,7 @@ class SceneView(Panel):
         self.pan: QPointF = QPointF(50.0, 50.0)
 
         # Selection
+        self.allow_snap: bool = False
         self.selected_object: BaseObject | None = None
         self.drag_offset: QPointF = QPointF(0, 0)
 
@@ -179,8 +180,22 @@ class SceneView(Panel):
             self.selected_object = None
             self.update()
         
-        if key == Qt.Key.Key_S:
+        # Saving
+        if event.key() == Qt.Key.Key_S and event.modifiers() == Qt.KeyboardModifier.ControlModifier:
             self._save_scene()
+
+        # Allow Snap
+        if key == Qt.Key.Key_Shift:
+            self.allow_snap = True
+        
+    def keyReleaseEvent(self, event: QKeyEvent) -> None:
+        super().keyPressEvent(event)
+    
+        key = event.key()
+
+        # Snap
+        if key == Qt.Key.Key_Shift:
+            self.allow_snap = False
     #endregion
 
     # Mouse Events
@@ -220,11 +235,21 @@ class SceneView(Panel):
         # Dragging Objects
         if self.selected_object and event.buttons() == Qt.MouseButton.LeftButton:
             world_coords = self.screen_to_world(event.position())
-            self.selected_object.move_to(
-                world_coords.x() - self.drag_offset.x(),
-                world_coords.y() - self.drag_offset.y()
-            )
+            
+            raw_x = world_coords.x() - self.drag_offset.x()
+            raw_y = world_coords.y() - self.drag_offset.y()
         
+            if self.allow_snap:
+                self.selected_object.move_to(
+                    round(raw_x / self.snap) * self.snap,
+                    round(raw_y / self.snap) * self.snap
+                )
+            
+            else:
+                self.selected_object.move_to(
+                    raw_x, raw_y
+                )
+
         self.update()
     #endregion
 
