@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (
     QStyledItemDelegate
 )
 from PySide6.QtGui import (
-    QColor, QPalette, QPixmap,
+    QColor, QPalette, QPixmap, QImage,
     QKeyEvent, QMouseEvent, QShortcut
 )
 from PySide6.QtCore import Qt, Signal
@@ -38,17 +38,45 @@ class FileTile(QWidget):
         label = QLabel()
 
         pixmap = QPixmap(str(self._get_icon(entry.suffix)))
+        pixmap = self._trim_transparent(pixmap)
         label.setPixmap(
             pixmap.scaled(64, 64, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.FastTransformation)
         )
 
+        filename = QLabel(self._get_file_name(entry.name))
+
         layout = QVBoxLayout(self)
+        layout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+
         layout.addWidget(label)
+        layout.addWidget(filename)
+
+    def _trim_transparent(self, pixmap: QPixmap) -> QPixmap:
+        import numpy as np
+
+        image = pixmap.toImage().convertToFormat(QImage.Format.Format_ARGB32)
+        ptr = image.bits()
+        arr = np.frombuffer(ptr, dtype=np.uint8).reshape((image.height(), image.width(), 4))
+
+        alpha = arr[:, :, 3]
+        rows = np.any(alpha > 0, axis=1)
+        cols = np.any(alpha > 0, axis=0)
+
+        if not rows.any():
+            return pixmap
+
+        min_y, max_y = np.where(rows)[0][[0, -1]]
+        min_x, max_x = np.where(cols)[0][[0, -1]]
+
+        cropped = image.copy(int(min_x), int(min_y), int(max_x - min_x + 1), int(max_y - min_y + 1))
+        return QPixmap.fromImage(cropped)
 
     def _get_icon(self, extension: str) -> str:
         path = ICON_PATHS.get(extension.lstrip("."), ICON_PATHS["file"])
-        print(path, path.exists())  # check path + whether file actually exists
         return str(path)
+
+    def _get_file_name(self, full_name: str) -> None:
+        return full_name.split(".")[0]
 
 class FilePreviewWidget(QWidget):
     def __init__(self, parent = None) -> None:
@@ -73,9 +101,6 @@ class FilePreviewWidget(QWidget):
         grid = QGridLayout(container)
         grid.setSpacing(8)
         grid.setAlignment(Qt.AlignmentFlag.AlignTop)
-
-        for col in range(5):
-            grid.setColumnStretch(col, 1)
 
         if path.is_dir():
             entries = sorted(path.iterdir(), key = lambda p: (p.is_file(), p.name))
