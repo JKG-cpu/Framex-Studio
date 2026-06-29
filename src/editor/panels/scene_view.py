@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import (
     QPainter, QPen, QBrush, QColor, QFont, QKeyEvent, QMouseEvent
 )
-from PySide6.QtCore import Qt, QPointF
+from PySide6.QtCore import Qt, QPointF, Signal
 
 from ...runtime import BaseObject
 from ..scene_editor import SceneEditor
@@ -18,7 +18,9 @@ from .base_panel import Panel
 __all__ = ["SceneView"]
 
 class SceneView(Panel):
-    def __init__(self, theme: dict[str, str], parent = None) -> None:
+    save_scene = Signal(dict)
+
+    def __init__(self, theme: dict[str, str], scene = None, parent = None) -> None:
         super().__init__(parent)
         self.theme: dict[str, str] = theme
 
@@ -43,15 +45,26 @@ class SceneView(Panel):
 
         self._setup_bars()
 
-        self.objects: list[BaseObject] = [
-            BaseObject()
-        ]
-        b = BaseObject()
-        b.move_to(500, 500
-        )
-        b.resize(100, 100)
-        b.color = "#FF007F"
-        self.objects.append(b)
+        self.scene: dict | None = scene
+        self.objects: list[BaseObject] = self._load_scene_objects()
+
+    # Scene Handling
+    #region
+    def select_scene(self, scene: dict) -> None:
+        if scene is self.scene:
+            self.update()
+            return
+
+        self.scene = scene
+        self.objects = self._load_scene_objects()
+        self.update()
+
+    def _load_scene_objects(self) -> None:
+        return self.scene.get("objects", []) if self.scene else []
+
+    def _save_scene(self) -> None:
+        self.save_scene.emit(self.scene)
+    #endregion
 
     # Helpers
     #region
@@ -165,6 +178,9 @@ class SceneView(Panel):
             self.selected_object.selected = False
             self.selected_object = None
             self.update()
+        
+        if key == Qt.Key.Key_S:
+            self._save_scene()
     #endregion
 
     # Mouse Events

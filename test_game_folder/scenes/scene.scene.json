@@ -1,0 +1,29 @@
+{
+  "name": "Scene 1",
+  "objects": [
+    {
+      "name": "Object",
+      "tags": [],
+      "active": true,
+      "layer": 0,
+      "color": "#FFFFFF",
+      "image_path": null,
+      "script_path": null,
+      "transform": {
+        "position": [
+          75.1328125,
+          56.2578125
+        ],
+        "rotation": 0.0,
+        "scale": [
+          1.0,
+          1.0
+        ],
+        "size": [
+          50.0,
+          50.0
+        ]
+      }
+    }
+  ]
+}

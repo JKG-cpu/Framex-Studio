@@ -46,7 +46,6 @@ class FileTile(QWidget):
         filename = QLabel(self._get_file_name(entry.name))
 
         layout = QVBoxLayout(self)
-        layout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
 
         layout.addWidget(label)
         layout.addWidget(filename)
@@ -117,6 +116,7 @@ class FilePreviewWidget(QWidget):
 
 class FileSystemWidget(QTreeWidget):
     item_selected = Signal(Path)
+    scene_selected = Signal(Path)
 
     def __init__(self, theme: dict[str, str], file_path: str, parent = None) -> None:
         super().__init__(parent)
@@ -176,9 +176,12 @@ class FileSystemWidget(QTreeWidget):
         if current is None:
             return
 
-        path = current.data(0, Qt.UserRole)
+        path: Path = current.data(0, Qt.UserRole)
 
         if path:
+            if ".scene" in path.name:
+                self.scene_selected.emit(path)
+
             self.item_selected.emit(path)
 
     # Key Presses
@@ -191,6 +194,8 @@ class FileSystemWidget(QTreeWidget):
         super().keyPressEvent(event)
 
 class FileSystemPanel(Panel):
+    scene_selected = Signal(Path)
+
     def __init__(self, theme: dict[str, str], file_path: str, parent = None) -> None:
         super().__init__(parent)
         self.setContentsMargins(0, 0, 0, 0)
@@ -203,6 +208,7 @@ class FileSystemPanel(Panel):
             file_path = file_path
         )
         self.file_system_widget.item_selected.connect(self._on_item_selected)
+        self.file_system_widget.scene_selected.connect(self._on_scene_selected)
 
         self.file_preview = FilePreviewWidget()
 
@@ -220,3 +226,6 @@ class FileSystemPanel(Panel):
 
     def _on_item_selected(self, path: Path) -> None:
         self.file_preview.update_grid(path)
+
+    def _on_scene_selected(self, path: Path) -> None:
+        self.scene_selected.emit(path)

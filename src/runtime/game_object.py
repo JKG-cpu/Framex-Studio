@@ -21,6 +21,35 @@ class BaseObject:
         self._image_path: str | None = None
         self._script_path: str | None = None
     
+    # Data
+    #region
+    def to_dict(self) -> dict:
+        return {
+            "name": self._name,
+            "tags": list(self._tags),
+            "active": self._active,
+            "layer": self._layer,
+            "color": self._color,
+            "image_path": self._image_path,
+            "script_path": self._script_path,
+            "transform": self.transform.to_dict()
+        }
+    
+    @classmethod
+    def from_dict(cls, data: dict) -> "BaseObject":
+        b = cls()
+        b._name = data["name"]
+        b._tags = data["tags"]
+        b._active = data["active"]
+        b._selected = False
+        b._layer = data["layer"]
+        b._color = data["color"]
+        b._image_path = data["image_path"]
+        b._script_path = data["script_path"]
+        b.transform = Transform.from_dict(data["transform"])
+        return b
+    #endregion
+
     # Properties
     #region
     @property
@@ -122,6 +151,8 @@ class BaseObject:
             raise FileNotFoundError(f"File path: {self._script_path} not found.")
     #endregion
 
+    # Other Methods
+    #region
     def toggle_active(self) -> None: self._active = not self._active
     def toggle_selected(self) -> None: self._selected = not self._selected
 
@@ -152,3 +183,4 @@ class BaseObject:
         
         else:
             raise TypeError(f"W and H must be ints or floats, got w: {type(w)} and h: {type(h)}")
+    #endregion

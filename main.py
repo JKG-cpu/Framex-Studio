@@ -19,5 +19,5 @@ if __name__ == "__main__":
     window.show()
 
     exit_code = app.exec()
-    # cc()
+    cc()
     exit(exit_code)
