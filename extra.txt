@@ -1,0 +1,16 @@
+# Icons
+"▶"   # play
+"⏸"   # pause
+"⏹"   # stop
+"⏭"   # skip forward
+"⏮"   # skip backward
+"↩"   # return / reset
+"✕"   # close
+"⊕"   # add
+"⊖"   # remove
+"⟳"   # refresh
+"☰"   # menu
+"⚙"   # settings
+"✎"   # edit
+"⌖"   # target/origin
+"⛶"   # fullscreen

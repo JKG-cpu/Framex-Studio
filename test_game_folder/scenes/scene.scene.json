@@ -11,8 +11,32 @@
       "script_path": null,
       "transform": {
         "position": [
-          0.0,
-          0.0
+          50.0,
+          50.0
+        ],
+        "rotation": 0.0,
+        "scale": [
+          1.0,
+          1.0
+        ],
+        "size": [
+          50.0,
+          50.0
+        ]
+      }
+    },
+    {
+      "name": "Object",
+      "tags": [],
+      "active": true,
+      "layer": 0,
+      "color": "#ff0004",
+      "image_path": null,
+      "script_path": null,
+      "transform": {
+        "position": [
+          700.0,
+          100.0
         ],
         "rotation": 0.0,
         "scale": [

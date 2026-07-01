@@ -137,6 +137,7 @@ class FileSystemWidget(QTreeWidget):
 
         self.theme = theme
         self.file_path: Path = Path(file_path)
+        self.found_scene: bool = False
 
         self.setObjectName("FileSystemWidget")
 

@@ -20,6 +20,7 @@ __all__ = ["SceneView"]
 
 class SceneView(Panel):
     save_scene = Signal(dict)
+    object_selected = Signal(BaseObject)
 
     def __init__(self, theme: dict[str, str], scene=None, parent=None) -> None:
         super().__init__(parent)
@@ -233,6 +234,7 @@ class SceneView(Panel):
         if obj and event.buttons() == Qt.MouseButton.LeftButton:
             obj.selected = True
             self.selected_object = obj
+            self.object_selected.emit(self.selected_object)
             self.deselected_objects(obj)
 
             self.drag_offset = self.screen_to_world(event.position()) - obj.position
@@ -257,6 +259,8 @@ class SceneView(Panel):
 
             else:
                 self.selected_object.move_to(raw_x, raw_y)
+
+            self.object_selected.emit(self.selected_object)
 
         self.update()
 

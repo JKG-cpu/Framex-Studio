@@ -1,6 +1,7 @@
 # ==========================
 # Manages Current Open Scene
 # ==========================
+from PySide6.QtCore import QPointF
 from pathlib import Path
 
 from ..runtime import BaseObject
@@ -21,5 +22,10 @@ class SceneEditor:
         self.scene_data = self.scene_parser.parse_path(path)
         self.objects = self.scene_data["objects"]
 
-    def save_scene(self, path: Path, data: dict) -> None:
-        self.scene_parser.save_path(path, data)
+    def save_scene(self, scene_data: dict) -> None:
+        self.scene_parser.save_path(self.scene_path, scene_data)
+
+    def create_object(self, position: QPointF) -> None:
+        obj = BaseObject()
+        obj.position = position
+        self.objects.append(obj)

@@ -166,6 +166,10 @@ class BaseObject:
         if not isfile(self._script_path):
             raise FileNotFoundError(f"File path: {self._script_path} not found.")
 
+    @position.setter
+    def position(self, position: QPointF) -> None:
+        self.transform.position = position
+
     # endregion
 
     # Other Methods

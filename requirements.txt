@@ -1,0 +1,11 @@
+darkdetect==0.7.1
+framex-ce==0.2.0
+numpy==2.5.0
+pillow==12.2.0
+pygame-ce==2.5.7
+pyqtdarktheme==2.1.0
+pyside6==6.11.1
+pyside6-addons==6.11.1
+pyside6-essentials==6.11.1
+ruff==0.15.20
+shiboken6==6.11.1

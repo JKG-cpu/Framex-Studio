@@ -1,8 +1,9 @@
 # =============================
 # Main PySide6 Window (Layout)
 # =============================
-from PySide6.QtWidgets import QMainWindow, QSplitter, QWidget
-from PySide6.QtCore import Qt, QThread, Signal, QObject
+from PySide6.QtWidgets import QMainWindow, QSplitter, QWidget, QMenu
+from PySide6.QtCore import Qt, QThread, Signal, QObject, QPoint, QPointF
+from PySide6.QtGui import QAction
 from os.path import join
 
 from .panels import *
@@ -50,7 +51,9 @@ class MainWindow(QMainWindow):
         self.hierarchy_panel = HierarchyPanel()
         self.scene_view = SceneView(theme=self.theme_manager.scene_view_colors)
         self.scene_view.save_scene.connect(self._save_scene)
+        self.scene_view.object_selected.connect(self._object_selected)
         self.properties_panel = PropertiesPanel()
+        self.properties_panel.object_updated.connect(self._object_changed)
 
         top_splitter = QSplitter(orientation=Qt.Horizontal)
         top_splitter.setHandleWidth(0)
@@ -58,6 +61,10 @@ class MainWindow(QMainWindow):
         top_splitter.addWidget(self.hierarchy_panel)
         top_splitter.addWidget(self.scene_view)
         top_splitter.addWidget(self.properties_panel)
+
+        top_splitter.setStretchFactor(0, 1)
+        top_splitter.setStretchFactor(1, 2)
+        top_splitter.setStretchFactor(2, 5)
 
         # Bottom
         self.file_system_panel = FileSystemPanel(
@@ -78,8 +85,31 @@ class MainWindow(QMainWindow):
 
         self.setCentralWidget(main_splitter)
 
+        self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.context_menu)
+
         self._scene_cache: dict[str, dict] = {}
 
+    # Context Menu (Right Click)
+    def context_menu(self, pos: QPoint) -> None:
+        menu = QMenu(self)
+
+        target_widget = self.childAt(pos)
+
+        if target_widget == self.scene_view:
+            local_pos = self.scene_view.mapFrom(self, pos)
+            world_pos = self.scene_view.screen_to_world(QPointF(local_pos))
+
+            act = QAction("Add Basic Object", self)
+            act.triggered.connect(lambda: self._add_object(world_pos))
+            menu.addAction(act)
+
+        else:
+            return
+
+        menu.exec(self.mapToGlobal(pos))
+
+    # Scene Handling
     def _scene_selected(self, path) -> None:
         if path in self._scene_cache:
             self.scene_view.select_scene(self._scene_cache[path])
@@ -97,8 +127,18 @@ class MainWindow(QMainWindow):
 
     def _on_scene_loaded(self, scene_data: dict) -> None:
         self.scene_view.select_scene(scene_data)
-        self.lu_path = self._loader.path
         self._scene_cache[self._loader.path] = scene_data
 
     def _save_scene(self, scene_data: dict) -> None:
-        self.scene_editor.save_scene(self.lu_path, scene_data)
+        self.scene_editor.save_scene(scene_data)
+
+    def _add_object(self, position: QPointF) -> None:
+        self.scene_editor.create_object(position)
+        self.scene_view.select_scene(self.scene_editor.scene_data)
+
+    # Properties
+    def _object_selected(self, obj) -> None:
+        self.properties_panel.update_object(obj)
+
+    def _object_changed(self, obj) -> None:
+        self.scene_view.update()

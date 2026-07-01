@@ -4,11 +4,11 @@
     "type": "split",
     "children": [
       {
-        "id": "999596f82d20d328",
+        "id": "620dae0185a4296d",
         "type": "tabs",
         "children": [
           {
-            "id": "ee172eaab42791e1",
+            "id": "85a10dd94ac8ddca",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -183,11 +183,11 @@
       "bases:Create new base": false
     }
   },
-  "active": "ee172eaab42791e1",
+  "active": "85a10dd94ac8ddca",
   "lastOpenFiles": [
-    "Framex Studio/BluePrint.canvas",
-    "Framex Studio/BluePrint.md",
     "Framex Studio/Current Progress.md",
+    "Framex Studio/BluePrint.md",
+    "Framex Studio/BluePrint.canvas",
     "Framex Studio/Logic.canvas",
     "Framex Studio/Untitled.base",
     "Excalidraw/Drawing 2026-06-29 19.17.47.excalidraw.md",
