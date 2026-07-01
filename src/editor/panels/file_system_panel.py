@@ -2,18 +2,18 @@
 # QTreeWidget: Folder Tree
 # ========================
 from PySide6.QtWidgets import (
-    QTreeWidget, QTreeWidgetItem, 
-    QSplitter, QHBoxLayout, QVBoxLayout, QGridLayout, QScrollArea,
-    QWidget, QLabel, QFrame,
-    QApplication, QStyle,
-    QStyledItemDelegate
+    QTreeWidget,
+    QTreeWidgetItem,
+    QSplitter,
+    QHBoxLayout,
+    QVBoxLayout,
+    QGridLayout,
+    QScrollArea,
+    QWidget,
+    QLabel,
 )
-from PySide6.QtGui import (
-    QColor, QPalette, QPixmap, QImage,
-    QKeyEvent, QMouseEvent, QShortcut
-)
+from PySide6.QtGui import QColor, QPixmap, QImage, QKeyEvent
 from PySide6.QtCore import Qt, Signal
-from PIL import Image as PILImage
 from pathlib import Path
 from os.path import join
 
@@ -28,8 +28,9 @@ ICON_PATHS = {
     "json": Path(join(HEAD_PATH, "Json File.png")),
     "py": Path(join(HEAD_PATH, "Python File.png")),
     "python": Path(join(HEAD_PATH, "Python File.png")),
-    "tmx": Path(join(HEAD_PATH, "TMX File.png"))
+    "tmx": Path(join(HEAD_PATH, "TMX File.png")),
 }
+
 
 class FileTile(QWidget):
     def __init__(self, entry: Path) -> None:
@@ -40,7 +41,12 @@ class FileTile(QWidget):
         pixmap = QPixmap(str(self._get_icon(entry.suffix)))
         pixmap = self._trim_transparent(pixmap)
         label.setPixmap(
-            pixmap.scaled(64, 64, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.FastTransformation)
+            pixmap.scaled(
+                64,
+                64,
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.FastTransformation,
+            )
         )
 
         filename = QLabel(self._get_file_name(entry.name))
@@ -55,7 +61,9 @@ class FileTile(QWidget):
 
         image = pixmap.toImage().convertToFormat(QImage.Format.Format_ARGB32)
         ptr = image.bits()
-        arr = np.frombuffer(ptr, dtype=np.uint8).reshape((image.height(), image.width(), 4))
+        arr = np.frombuffer(ptr, dtype=np.uint8).reshape(
+            (image.height(), image.width(), 4)
+        )
 
         alpha = arr[:, :, 3]
         rows = np.any(alpha > 0, axis=1)
@@ -67,7 +75,9 @@ class FileTile(QWidget):
         min_y, max_y = np.where(rows)[0][[0, -1]]
         min_x, max_x = np.where(cols)[0][[0, -1]]
 
-        cropped = image.copy(int(min_x), int(min_y), int(max_x - min_x + 1), int(max_y - min_y + 1))
+        cropped = image.copy(
+            int(min_x), int(min_y), int(max_x - min_x + 1), int(max_y - min_y + 1)
+        )
         return QPixmap.fromImage(cropped)
 
     def _get_icon(self, extension: str) -> str:
@@ -77,8 +87,9 @@ class FileTile(QWidget):
     def _get_file_name(self, full_name: str) -> None:
         return full_name.split(".")[0]
 
+
 class FilePreviewWidget(QWidget):
-    def __init__(self, parent = None) -> None:
+    def __init__(self, parent=None) -> None:
         super().__init__(parent)
 
         self.setAttribute(Qt.WA_StyledBackground, True)
@@ -102,23 +113,24 @@ class FilePreviewWidget(QWidget):
         grid.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         if path.is_dir():
-            entries = sorted(path.iterdir(), key = lambda p: (p.is_file(), p.name))
+            entries = sorted(path.iterdir(), key=lambda p: (p.is_file(), p.name))
             for i, entry in enumerate(entries):
                 tile = FileTile(entry)
                 row, col = divmod(i, 5)
                 grid.addWidget(tile, row, col)
-            
+
             self._scroll.setWidget(container)
 
         else:
             grid.addWidget(FileTile(path))
             self._scroll.setWidget(container)
 
+
 class FileSystemWidget(QTreeWidget):
     item_selected = Signal(Path)
     scene_selected = Signal(Path)
 
-    def __init__(self, theme: dict[str, str], file_path: str, parent = None) -> None:
+    def __init__(self, theme: dict[str, str], file_path: str, parent=None) -> None:
         super().__init__(parent)
         self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
@@ -146,24 +158,28 @@ class FileSystemWidget(QTreeWidget):
 
         for entry in sorted(path.iterdir()):
             if entry.is_dir():
-                folders.append((entry.stem, self._load_entries(entry), "Folder", entry))
+                folders.append((entry.stem, self._load_entries(entry), entry))
             else:
-                files.append((entry.stem, str(entry.suffix) if entry.suffix else "None", entry))
+                files.append(
+                    (entry.stem, str(entry.suffix) if entry.suffix else "None", entry)
+                )
 
         return folders + files
 
-    def _build_tree(self, parent, entries: list[tuple[str, str, str] | tuple[str, str]]) -> None:
+    def _build_tree(
+        self, parent, entries: list[tuple[str, str, str] | tuple[str, str]]
+    ) -> None:
         for entry in entries:
-            if len(entry) == 4:
-                name, content, _, path = entry
-            elif len(entry) == 3:
-                name, content, path = entry
+            name, content, path = entry
 
             if isinstance(content, list):
                 item = QTreeWidgetItem(parent, [name])
-                item.setChildIndicatorPolicy(QTreeWidgetItem.ChildIndicatorPolicy.ShowIndicator)
+                item.setChildIndicatorPolicy(
+                    QTreeWidgetItem.ChildIndicatorPolicy.ShowIndicator
+                )
                 item.setForeground(0, QColor(self.theme["folder"]))
-                if content: item.setExpanded(True)
+                if content:
+                    item.setExpanded(True)
                 item.setData(0, Qt.UserRole, path)
                 self._build_tree(item, content)
 
@@ -190,13 +206,14 @@ class FileSystemWidget(QTreeWidget):
 
         if key == Qt.Key.Key_Escape:
             self.clearSelection()
-        
+
         super().keyPressEvent(event)
+
 
 class FileSystemPanel(Panel):
     scene_selected = Signal(Path)
 
-    def __init__(self, theme: dict[str, str], file_path: str, parent = None) -> None:
+    def __init__(self, theme: dict[str, str], file_path: str, parent=None) -> None:
         super().__init__(parent)
         self.setContentsMargins(0, 0, 0, 0)
 
@@ -204,15 +221,14 @@ class FileSystemPanel(Panel):
         self.setObjectName("FileSystemPanel")
 
         self.file_system_widget = FileSystemWidget(
-            theme = self.theme,
-            file_path = file_path
+            theme=self.theme, file_path=file_path
         )
         self.file_system_widget.item_selected.connect(self._on_item_selected)
         self.file_system_widget.scene_selected.connect(self._on_scene_selected)
 
         self.file_preview = FilePreviewWidget()
 
-        splitter = QSplitter(orientation = Qt.Horizontal)
+        splitter = QSplitter(orientation=Qt.Horizontal)
         splitter.setHandleWidth(0)
         splitter.addWidget(self.file_system_widget)
         splitter.addWidget(self.file_preview)

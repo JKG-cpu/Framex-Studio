@@ -4,6 +4,7 @@ from pathlib import Path
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QApplication
 
+
 class ThemeManager(QObject):
     theme_changed = Signal(str)
 
@@ -35,7 +36,7 @@ class ThemeManager(QObject):
         return self._get_colors("file_system")
 
     # StyleSheet
-    #region
+    # region
     def generate_stylesheet(self) -> str:
         main = self.main_colors
         fs = self.file_system_colors
@@ -148,10 +149,11 @@ class ThemeManager(QObject):
         qdarktheme.setup_theme(self._mode)
         app.setStyleSheet(app.styleSheet() + self.generate_stylesheet())
         self.theme_changed.emit(self._mode)
-    #endregion
+
+    # endregion
 
     # Mode
-    #region
+    # region
     @property
     def mode(self) -> str:
         return self._mode
@@ -164,4 +166,5 @@ class ThemeManager(QObject):
     def toggle_theme(self) -> None:
         new_mode = "light" if self._mode == "dark" else "dark"
         self.set_mode(new_mode)
-    #endregion
+
+    # endregion

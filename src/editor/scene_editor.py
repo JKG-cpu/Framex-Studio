@@ -2,12 +2,12 @@
 # Manages Current Open Scene
 # ==========================
 from pathlib import Path
-from json import load
 
 from ..runtime import BaseObject
 from ..serialization import *
 
 __all__ = ["SceneEditor"]
+
 
 class SceneEditor:
     def __init__(self) -> None:
@@ -20,6 +20,6 @@ class SceneEditor:
         self.scene_path = path
         self.scene_data = self.scene_parser.parse_path(path)
         self.objects = self.scene_data["objects"]
-    
+
     def save_scene(self, path: Path, data: dict) -> None:
         self.scene_parser.save_path(path, data)

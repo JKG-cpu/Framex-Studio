@@ -2,12 +2,12 @@
 # GameObject Class
 # ================
 from PySide6.QtCore import QPointF
-from PySide6.QtGui import QColor
 from os.path import join, isfile
 
 from .components import *
 
 __all__ = ["BaseObject"]
+
 
 class BaseObject:
     def __init__(self) -> None:
@@ -20,9 +20,9 @@ class BaseObject:
         self._color: str = "#FFFFFF"
         self._image_path: str | None = None
         self._script_path: str | None = None
-    
+
     # Data
-    #region
+    # region
     def to_dict(self) -> dict:
         return {
             "name": self._name,
@@ -32,9 +32,9 @@ class BaseObject:
             "color": self._color,
             "image_path": self._image_path,
             "script_path": self._script_path,
-            "transform": self.transform.to_dict()
+            "transform": self.transform.to_dict(),
         }
-    
+
     @classmethod
     def from_dict(cls, data: dict) -> "BaseObject":
         b = cls()
@@ -48,56 +48,70 @@ class BaseObject:
         b._script_path = data["script_path"]
         b.transform = Transform.from_dict(data["transform"])
         return b
-    #endregion
+
+    # endregion
 
     # Properties
-    #region
+    # region
     @property
-    def name(self) -> str: return self._name
+    def name(self) -> str:
+        return self._name
 
     @property
-    def tag(self) -> frozenset[str]: return frozenset(self._tags)
-    
-    @property
-    def active(self) -> bool: return self._active
+    def tag(self) -> frozenset[str]:
+        return frozenset(self._tags)
 
     @property
-    def selected(self) -> bool: return self._selected
+    def active(self) -> bool:
+        return self._active
 
     @property
-    def layer(self) -> int: return self._layer
-    
+    def selected(self) -> bool:
+        return self._selected
+
     @property
-    def color(self) -> str: return self._color
+    def layer(self) -> int:
+        return self._layer
+
+    @property
+    def color(self) -> str:
+        return self._color
 
     # Transform
     @property
-    def position(self) -> QPointF: return self.transform.position
+    def position(self) -> QPointF:
+        return self.transform.position
 
     @property
-    def rotation(self) -> float: return self.transform.rotation
+    def rotation(self) -> float:
+        return self.transform.rotation
 
     @property
-    def scale(self) -> QPointF: return self.transform.scale
+    def scale(self) -> QPointF:
+        return self.transform.scale
 
     @property
-    def size(self) -> QPointF: return self.transform.size
+    def size(self) -> QPointF:
+        return self.transform.size
 
     # Paths
     @property
-    def image(self) -> str: return self._image_path
+    def image(self) -> str:
+        return self._image_path
 
-    @property 
-    def script(self) -> str: return self._script_path
-    #endregion
+    @property
+    def script(self) -> str:
+        return self._script_path
+
+    # endregion
 
     # Setter
-    #region
+    # region
     @name.setter
     def name(self, value: str) -> None:
         if isinstance(value, str):
             self._name = value
-        
+
         else:
             raise TypeError(f"Name must be a str, got {type(value)}")
 
@@ -105,7 +119,7 @@ class BaseObject:
     def tag(self, value: str | list[str] | set[str]) -> None:
         if isinstance(value, str):
             self._tags = {value.strip().lower()}
-        
+
         elif isinstance(value, (list, set)):
             self._tags = {v.strip().lower() for v in value}
 
@@ -116,7 +130,7 @@ class BaseObject:
     def selected(self, selected: bool) -> None:
         if isinstance(selected, bool):
             self._selected = selected
-        
+
         else:
             raise TypeError(f"Selected must be a bool, got {type(selected)}")
 
@@ -124,44 +138,52 @@ class BaseObject:
     def layer(self, value: int) -> None:
         if isinstance(value, int):
             self._layer = value
-        
+
         else:
             raise TypeError(f"Layer must be an int, got {type(value)}")
-    
+
     @color.setter
     def color(self, value: str) -> None:
         if isinstance(value, str) and value.startswith("#") and len(value) == 7:
             self._color = value
 
         else:
-            raise TypeError(f"Value must be a hex color (str), got {type(value)}, value: {value}")
-    
+            raise TypeError(
+                f"Value must be a hex color (str), got {type(value)}, value: {value}"
+            )
+
     @image.setter
     def image(self, *path: str) -> None:
         self._image_path = join(*path)
 
         if not isfile(self._image_path):
             raise FileNotFoundError(f"File path: {self._image_path} not found.")
-        
+
     @script.setter
     def script(self, *path: str) -> None:
         self._script_path = join(*path)
 
         if not isfile(self._script_path):
             raise FileNotFoundError(f"File path: {self._script_path} not found.")
-    #endregion
+
+    # endregion
 
     # Other Methods
-    #region
-    def toggle_active(self) -> None: self._active = not self._active
-    def toggle_selected(self) -> None: self._selected = not self._selected
+    # region
+    def toggle_active(self) -> None:
+        self._active = not self._active
 
-    def move_to(self, x: int | float, y: int | float) -> None: 
+    def toggle_selected(self) -> None:
+        self._selected = not self._selected
+
+    def move_to(self, x: int | float, y: int | float) -> None:
         if isinstance(x, (int, float)) and isinstance(y, (int, float)):
             self.transform.position = QPointF(x, y)
 
         else:
-            raise TypeError(f"X and Y must be ints or floats, got x: {type(x)} and y: {type(y)}")
+            raise TypeError(
+                f"X and Y must be ints or floats, got x: {type(x)} and y: {type(y)}"
+            )
 
     def rotate(self, rotation: int | float) -> None:
         if isinstance(rotation, (int, float)):
@@ -173,14 +195,19 @@ class BaseObject:
     def scale_to(self, w: int | float, h: int | float) -> None:
         if isinstance(w, (int, float)) and isinstance(h, (int, float)):
             self.transform.scale = QPointF(w, h)
-        
+
         else:
-            raise TypeError(f"W and H must be ints or floats, got w: {type(w)} and h: {type(h)}")
-    
+            raise TypeError(
+                f"W and H must be ints or floats, got w: {type(w)} and h: {type(h)}"
+            )
+
     def resize(self, w: int | float, h: int | float) -> None:
         if isinstance(w, (int, float)) and isinstance(h, (int, float)):
             self.transform.size = QPointF(w, h)
-        
+
         else:
-            raise TypeError(f"W and H must be ints or floats, got w: {type(w)} and h: {type(h)}")
-    #endregion
+            raise TypeError(
+                f"W and H must be ints or floats, got w: {type(w)} and h: {type(h)}"
+            )
+
+    # endregion

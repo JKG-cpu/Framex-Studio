@@ -7,8 +7,9 @@ from .base_panel import Panel
 
 __all__ = ["HierarchyPanel"]
 
+
 class HierarchyPanel(Panel):
-    def __init__(self, parent = None) -> None:
+    def __init__(self, parent=None) -> None:
         super().__init__(parent)
 
         self.setObjectName("HeirarchyPanel")
